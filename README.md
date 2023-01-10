@@ -23,14 +23,23 @@
 |rife-ncnn-vulkan,png,32:2:32|Release 20221029|80frames/7.0569331s = 11.336fps|
 |rife-ncnn-vulkan,png,8:2:8|Release 20221029|80frames/7.7020066s = 10.387fps|
 
+|name|version|fps for 720p|
+|-|-|-|
+|realesrgan-ncnn-vulkan,png,4:4:4|Release 20221029|10frames/23.5777099s = 0.424fps|
+|realesrgan-ncnn-vulkan,png,2:2:2|Release 20221029|10frames/23.8314694s = 0.42fps|
+|realesrgan-ncnn-vulkan,png,1:2:1|Release 20221029|10frames/24.1599941s = 0.414fps|
+|realesrgan-ncnn-vulkan,png,2:1:2|Release 20221029|10frames/26.1573922s = 0.382fps|
+|realesrgan-ncnn-vulkan,png,1:1:1|Release 20221029|10frames/26.0006624s = 0.385fps|
+
 |name|cmd|
 |-|-|
 |rife-ncnn-vulkan,png|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}|
-|rife-ncnn-vulkan,jpg|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.jpg}|
 |rife-ncnn-vulkan,png,\*:\*:\*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j \*:\*:\* -m rife-v4.6 -f frame_%08d.jpg}|
+|rife-ncnn-vulkan,jpg|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.jpg}|
 |realcugan-ncnn-vulkan,png|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}|
 |realcugan-ncnn-vulkan,jpg|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2 -f jpg}|
 |realesrgan-ncnn-vulkan,png|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus}|
+|realesrgan-ncnn-vulkan,png,\*:\*:\*|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j \*:\*:\* -n realesrgan-x4plus}|
 |realesrgan-ncnn-vulkan,jpg|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus -f jpg} |
 |vs-rife-trt,ffmpeg,png|vspipe -c y4m rife_cuda.vpy - \| ffmpeg -i - -fps_mode passthrough 2_rife_frames/frame_%08d.png|
 |vs-rife-trt,ffmpeg,jpg|vspipe -c y4m rife_cuda.vpy - \| ffmpeg -i - -fps_mode passthrough -qscale:v 1 -qmin 1 -qmax 1 2_rife_frames/frame_%08d.jpg|

@@ -27,7 +27,7 @@
 |-|-|
 |rife-ncnn-vulkan,png|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}|
 |rife-ncnn-vulkan,jpg|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.jpg}|
-|rife-ncnn-vulkan,png,*:*:*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j *:*:* -m rife-v4.6 -f frame_%08d.jpg}|
+|rife-ncnn-vulkan,png,\*:\*:\*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j \*:\*:\* -m rife-v4.6 -f frame_%08d.jpg}|
 |realcugan-ncnn-vulkan,png|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}|
 |realcugan-ncnn-vulkan,jpg|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2 -f jpg}|
 |realesrgan-ncnn-vulkan,png|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus}|

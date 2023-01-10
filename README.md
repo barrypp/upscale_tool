@@ -25,20 +25,20 @@
 
 |name|version|fps for 720p|
 |-|-|-|
-|realesrgan-ncnn-vulkan,png,4:4:4|Release 20221029|10frames/23.5777099s = 0.424fps|
-|realesrgan-ncnn-vulkan,png,2:2:2|Release 20221029|10frames/23.8314694s = 0.42fps|
-|realesrgan-ncnn-vulkan,png,1:2:1|Release 20221029|10frames/24.1599941s = 0.414fps|
-|realesrgan-ncnn-vulkan,png,2:1:2|Release 20221029|10frames/26.1573922s = 0.382fps|
-|realesrgan-ncnn-vulkan,png,1:1:1|Release 20221029|10frames/26.0006624s = 0.385fps|
+|realesrgan-ncnn-vulkan,png,4:4:4|V0.2.5.0|10frames/23.5777099s = 0.424fps|
+|realesrgan-ncnn-vulkan,png,2:2:2|V0.2.5.0|10frames/23.8314694s = 0.42fps|
+|realesrgan-ncnn-vulkan,png,1:2:1|V0.2.5.0|10frames/24.1599941s = 0.414fps|
+|realesrgan-ncnn-vulkan,png,2:1:2|V0.2.5.0|10frames/26.1573922s = 0.382fps|
+|realesrgan-ncnn-vulkan,png,1:1:1|V0.2.5.0|10frames/26.0006624s = 0.385fps|
 
 |name|version|fps for 720p|
 |-|-|-|
-|realcugan-ncnn-vulkan,png,8:8:8|Release 20221029|120frames/15.5509565s = 7.717fps|
-|realcugan-ncnn-vulkan,png,4:4:4|Release 20221029|120frames/15.431134s = 7.776fps|
-|realcugan-ncnn-vulkan,png,2:2:2|Release 20221029|120frames/15.5341921s = 7.725fps|
-|realcugan-ncnn-vulkan,png,1:2:1|Release 20221029|120frames/16.3124188s = 7.356fps|
-|realcugan-ncnn-vulkan,png,2:1:2|Release 20221029|120frames/19.5704774s = 6.132fps|
-|realcugan-ncnn-vulkan,png,1:1:1|Release 20221029|120frames/19.7746196s = 6.068fps|
+|realcugan-ncnn-vulkan,png,8:8:8|Release 20220728|120frames/15.5509565s = 7.717fps|
+|realcugan-ncnn-vulkan,png,4:4:4|Release 20220728|120frames/15.431134s = 7.776fps|
+|realcugan-ncnn-vulkan,png,2:2:2|Release 20220728|120frames/15.5341921s = 7.725fps|
+|realcugan-ncnn-vulkan,png,1:2:1|Release 20220728|120frames/16.3124188s = 7.356fps|
+|realcugan-ncnn-vulkan,png,2:1:2|Release 20220728|120frames/19.5704774s = 6.132fps|
+|realcugan-ncnn-vulkan,png,1:1:1|Release 20220728|120frames/19.7746196s = 6.068fps|
 
 |name|cmd|
 |-|-|

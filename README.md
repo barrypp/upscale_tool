@@ -2,7 +2,7 @@
 
 ## benchmark
 
-|name|version|fps|
+|name|version|fps for 720p|
 |-|-|-|
 |rife-ncnn-vulkan,png|Release 20221029|1440frames/18.6966328s = 77.019fps|
 |rife-ncnn-vulkan,jpg|Release 20221029|1440frames/13.5232566s = 106.48fps|
@@ -14,10 +14,20 @@
 |vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1|1440frames/16.70s = 86.2275fps|
 |vs-rife-trt|mpv-lazy-2023V1|1440frames/14.32s = 100.55866fps|
 
+|name|version|fps for 2160p|
+|-|-|-|
+|rife-ncnn-vulkan,png,1:1:1|Release 20221029|80frames/35.4784088s = 2.255fps|
+|rife-ncnn-vulkan,png,4:4:4|Release 20221029|80frames/11.6383979s = 6.874fps|
+|rife-ncnn-vulkan,png,16:4:16|Release 20221029|80frames/7.2700747s = 11.004fps|
+|rife-ncnn-vulkan,png,16:2:16|Release 20221029|80frames/7.0000219s = 11.429fps|
+|rife-ncnn-vulkan,png,32:2:32|Release 20221029|80frames/7.0569331s = 11.336fps|
+|rife-ncnn-vulkan,png,8:2:8|Release 20221029|80frames/7.7020066s = 10.387fps|
+
 |name|cmd|
 |-|-|
 |rife-ncnn-vulkan,png|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}|
 |rife-ncnn-vulkan,jpg|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.jpg}|
+|rife-ncnn-vulkan,png,*:*:*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j *:*:* -m rife-v4.6 -f frame_%08d.jpg}|
 |realcugan-ncnn-vulkan,png|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}|
 |realcugan-ncnn-vulkan,jpg|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2 -f jpg}|
 |realesrgan-ncnn-vulkan,png|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus}|

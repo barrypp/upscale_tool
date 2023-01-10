@@ -31,12 +31,22 @@
 |realesrgan-ncnn-vulkan,png,2:1:2|Release 20221029|10frames/26.1573922s = 0.382fps|
 |realesrgan-ncnn-vulkan,png,1:1:1|Release 20221029|10frames/26.0006624s = 0.385fps|
 
+|name|version|fps for 720p|
+|-|-|-|
+|realcugan-ncnn-vulkan,png,8:8:8|Release 20221029|120frames/15.5509565s = 7.717fps|
+|realcugan-ncnn-vulkan,png,4:4:4|Release 20221029|120frames/15.431134s = 7.776fps|
+|realcugan-ncnn-vulkan,png,2:2:2|Release 20221029|120frames/15.5341921s = 7.725fps|
+|realcugan-ncnn-vulkan,png,1:2:1|Release 20221029|120frames/16.3124188s = 7.356fps|
+|realcugan-ncnn-vulkan,png,2:1:2|Release 20221029|120frames/19.5704774s = 6.132fps|
+|realcugan-ncnn-vulkan,png,1:1:1|Release 20221029|120frames/19.7746196s = 6.068fps|
+
 |name|cmd|
 |-|-|
 |rife-ncnn-vulkan,png|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}|
 |rife-ncnn-vulkan,png,\*:\*:\*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j \*:\*:\* -m rife-v4.6 -f frame_%08d.jpg}|
 |rife-ncnn-vulkan,jpg|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.jpg}|
 |realcugan-ncnn-vulkan,png|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}|
+|realcugan-ncnn-vulkan,png,\*:\*:\*|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j \*:\*:\* -s 2}|
 |realcugan-ncnn-vulkan,jpg|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2 -f jpg}|
 |realesrgan-ncnn-vulkan,png|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus}|
 |realesrgan-ncnn-vulkan,png,\*:\*:\*|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j \*:\*:\* -n realesrgan-x4plus}|

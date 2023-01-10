@@ -4,14 +4,14 @@
 
 |name|version|fps|
 |-|-|-|
-|rife-ncnn-vulkan,png|Release 20221029|2880frames/18.6966328s = 154.038fps|
-|rife-ncnn-vulkan,jpg|Release 20221029|2880frames/13.5232566s = 212.966fps|
+|rife-ncnn-vulkan,png|Release 20221029|1440frames/18.6966328s = 77.019fps|
+|rife-ncnn-vulkan,jpg|Release 20221029|1440frames/13.5232566s = 106.48fps|
 |realcugan-ncnn-vulkan,png|Release 20220728|100frames/12.6426513s = 7.91fps|
 |realcugan-ncnn-vulkan,jpg|Release 20220728|100frames/12.8281213s = 7.795fps|
 |realesrgan-ncnn-vulkan,png|V0.2.5.0|10frames/23.5290052s = 0.425fps|
 |realesrgan-ncnn-vulkan,jpg|V0.2.5.0|10frames/23.3038919s = 0.429fps|
-|vs-rife-trt,ffmpeg,png|mpv-lazy-2023V1|2880frames/41.31s = 70fps|
-|vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1|2880frames/16.70s = 174fps|
+|vs-rife-trt,ffmpeg,png|mpv-lazy-2023V1|1440frames/41.31s = 34.858fps|
+|vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1|1440frames/16.70s = 86.2275fps|
 
 |name|cmd|
 |-|-|

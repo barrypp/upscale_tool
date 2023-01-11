@@ -6,13 +6,14 @@
 |-|-|-|
 |rife-ncnn-vulkan,png|Release 20221029|1440frames/18.6966328s = 77.019fps|
 |rife-ncnn-vulkan,jpg|Release 20221029|1440frames/13.5232566s = 106.48fps|
+|vs-rife-trt,ffmpeg,png|mpv-lazy-2023V1|1440frames/41.31s = 34.858fps|
+|vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1|1440frames/16.70s = 86.2275fps|
+|vs-rife-trt|mpv-lazy-2023V1|1440frames/14.32s = 100.55866fps|
 |realcugan-ncnn-vulkan,png|Release 20220728|100frames/12.6426513s = 7.91fps|
 |realcugan-ncnn-vulkan,jpg|Release 20220728|100frames/12.8281213s = 7.795fps|
 |realesrgan-ncnn-vulkan,png|V0.2.5.0|10frames/23.5290052s = 0.425fps|
 |realesrgan-ncnn-vulkan,jpg|V0.2.5.0|10frames/23.3038919s = 0.429fps|
-|vs-rife-trt,ffmpeg,png|mpv-lazy-2023V1|1440frames/41.31s = 34.858fps|
-|vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1|1440frames/16.70s = 86.2275fps|
-|vs-rife-trt|mpv-lazy-2023V1|1440frames/14.32s = 100.55866fps|
+|TensorRT_Real_ESRGA|release 2023-1-11|0.821162fps/s|
 
 |name|version|fps for 2160p|
 |-|-|-|
@@ -40,7 +41,7 @@
 |realcugan-ncnn-vulkan,png,2:1:2|Release 20220728|120frames/19.5704774s = 6.132fps|
 |realcugan-ncnn-vulkan,png,1:1:1|Release 20220728|120frames/19.7746196s = 6.068fps|
 
-|name|cmd|
+|name|config|
 |-|-|
 |rife-ncnn-vulkan,png|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}|
 |rife-ncnn-vulkan,png,\*:\*:\*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j \*:\*:\* -m rife-v4.6 -f frame_%08d.jpg}|
@@ -54,6 +55,7 @@
 |vs-rife-trt,ffmpeg,png|vspipe -c y4m rife_cuda.vpy - \| ffmpeg -i - -fps_mode passthrough 2_rife_frames/frame_%08d.png|
 |vs-rife-trt,ffmpeg,jpg|vspipe -c y4m rife_cuda.vpy - \| ffmpeg -i - -fps_mode passthrough -qscale:v 1 -qmin 1 -qmax 1 2_rife_frames/frame_%08d.jpg|
 |vs-rife-trt|vspipe -p -c y4m rife_cuda.vpy .|
+|TensorRT_Real_ESRGA|RealESRGAN_x4plus;maxBatchSize,1;precision_mode,16;OUT_SCALE,4|
 
  
 |name|from|
@@ -62,6 +64,7 @@
 |realcugan-ncnn-vulkan|https://github.com/nihui/realcugan-ncnn-vulkan/releases|
 |realesrgan-ncnn-vulkan|https://github.com/xinntao/Real-ESRGAN/releases|
 |rife_cuda.vpy|https://github.com/hooke007/MPV_lazy/releases, with minor change to script|
+|TensorRT_Real_ESRGAN|https://github.com/barrypp/TensorRT_EX/releases|
 
 ## environment
 10700k+RTX3080+RAMDISK

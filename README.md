@@ -2,6 +2,7 @@
 
 ## benchmark
 
+
 |name|version|fps for 720p|
 |-|-|-|
 |rife-ncnn-vulkan,png|Release 20221029|1440frames/18.6966328s = 77.019fps|
@@ -14,6 +15,17 @@
 |realesrgan-ncnn-vulkan,png|V0.2.5.0|10frames/23.5290052s = 0.425fps|
 |realesrgan-ncnn-vulkan,jpg|V0.2.5.0|10frames/23.3038919s = 0.429fps|
 |TensorRT_Real_ESRGA|release 2023-1-11|0.821162fps/s|
+```
+Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}
+Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}
+Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus}
+vspipe -c y4m rife_cuda.vpy - | ffmpeg -i - -fps_mode passthrough 2_rife_frames/frame_%08d.png
+vspipe -c y4m rife_cuda.vpy - | ffmpeg -i - -fps_mode passthrough -qscale:v 1 -qmin 1 -qmax 1 2_rife_frames/frame_%08d.jpg
+vspipe -p -c y4m rife_cuda.vpy .
+TensorRT_Real_ESRGA, RealESRGAN_x4plus;maxBatchSize,1;precision_mode,16;OUT_SCALE,4
+```
+
+---
 
 |name|version|fps for 2160p|
 |-|-|-|
@@ -23,6 +35,11 @@
 |rife-ncnn-vulkan,png,16:2:16|Release 20221029|80frames/7.0000219s = 11.429fps|
 |rife-ncnn-vulkan,png,32:2:32|Release 20221029|80frames/7.0569331s = 11.336fps|
 |rife-ncnn-vulkan,png,8:2:8|Release 20221029|80frames/7.7020066s = 10.387fps|
+```
+Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j *:*:* -m rife-v4.6 -f frame_%08d.png}
+```
+
+---
 
 |name|version|fps for 720p|
 |-|-|-|
@@ -31,6 +48,10 @@
 |realesrgan-ncnn-vulkan,png,1:2:1|V0.2.5.0|10frames/24.1599941s = 0.414fps|
 |realesrgan-ncnn-vulkan,png,2:1:2|V0.2.5.0|10frames/26.1573922s = 0.382fps|
 |realesrgan-ncnn-vulkan,png,1:1:1|V0.2.5.0|10frames/26.0006624s = 0.385fps|
+```
+Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j *:*:* -n realesrgan-x4plus}
+```
+---
 
 |name|version|fps for 720p|
 |-|-|-|
@@ -40,23 +61,10 @@
 |realcugan-ncnn-vulkan,png,1:2:1|Release 20220728|120frames/16.3124188s = 7.356fps|
 |realcugan-ncnn-vulkan,png,2:1:2|Release 20220728|120frames/19.5704774s = 6.132fps|
 |realcugan-ncnn-vulkan,png,1:1:1|Release 20220728|120frames/19.7746196s = 6.068fps|
-
-|name|config|
-|-|-|
-|rife-ncnn-vulkan,png|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}|
-|rife-ncnn-vulkan,png,\*:\*:\*|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j \*:\*:\* -m rife-v4.6 -f frame_%08d.jpg}|
-|rife-ncnn-vulkan,jpg|Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.jpg}|
-|realcugan-ncnn-vulkan,png|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}|
-|realcugan-ncnn-vulkan,png,\*:\*:\*|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j \*:\*:\* -s 2}|
-|realcugan-ncnn-vulkan,jpg|Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2 -f jpg}|
-|realesrgan-ncnn-vulkan,png|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus}|
-|realesrgan-ncnn-vulkan,png,\*:\*:\*|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j \*:\*:\* -n realesrgan-x4plus}|
-|realesrgan-ncnn-vulkan,jpg|Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 2:2:2 -n realesrgan-x4plus -f jpg} |
-|vs-rife-trt,ffmpeg,png|vspipe -c y4m rife_cuda.vpy - \| ffmpeg -i - -fps_mode passthrough 2_rife_frames/frame_%08d.png|
-|vs-rife-trt,ffmpeg,jpg|vspipe -c y4m rife_cuda.vpy - \| ffmpeg -i - -fps_mode passthrough -qscale:v 1 -qmin 1 -qmax 1 2_rife_frames/frame_%08d.jpg|
-|vs-rife-trt|vspipe -p -c y4m rife_cuda.vpy .|
-|TensorRT_Real_ESRGA|RealESRGAN_x4plus;maxBatchSize,1;precision_mode,16;OUT_SCALE,4|
-
+```
+Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j *:*:* -s 2}
+```
+---
  
 |name|from|
 |-|-|

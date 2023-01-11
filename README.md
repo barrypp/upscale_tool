@@ -14,7 +14,7 @@
 |realcugan-ncnn-vulkan,jpg|Release 20220728|100frames/12.8281213s = 7.795fps|
 |realesrgan-ncnn-vulkan,png|V0.2.5.0|10frames/23.5290052s = 0.425fps|
 |realesrgan-ncnn-vulkan,jpg|V0.2.5.0|10frames/23.3038919s = 0.429fps|
-|TensorRT_Real_ESRGA|release 2023-1-11|0.821162fps/s|
+|TensorRT_Real_ESRGA|release 2023-1-12|1.39821 fps/s|
 ```
 Measure-Command { rife-ncnn-vulkan -v -i 1_frames -o 2_rife_frames -j 10:10:10 -m rife-v4.6 -f frame_%08d.png}
 Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j 4:4:4 -s 2}

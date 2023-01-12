@@ -3,13 +3,16 @@
 ## benchmark
 
 
-|name|version|fps for 720p|
+|name|version|fps(source) for 720p|
 |-|-|-|
 |rife-ncnn-vulkan,png|Release 20221029|1440frames/18.6966328s = 77.019fps|
 |rife-ncnn-vulkan,jpg|Release 20221029|1440frames/13.5232566s = 106.48fps|
 |vs-rife-trt,ffmpeg,png|mpv-lazy-2023V1|1440frames/41.31s = 34.858fps|
 |vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1|1440frames/16.70s = 86.2275fps|
 |vs-rife-trt|mpv-lazy-2023V1|1440frames/14.32s = 100.55866fps|
+|vs-rife-trt,ffmpeg,png|mpv-lazy-2023V1 [patch](https://github.com/hooke007/MPV_lazy/discussions/123#discussioncomment-4659072)|74fps|
+|vs-rife-trt,ffmpeg,jpg|mpv-lazy-2023V1 [patch](https://github.com/hooke007/MPV_lazy/discussions/123#discussioncomment-4659072)|156fps|
+|vs-rife-trt|mpv-lazy-2023V1 [patch](https://github.com/hooke007/MPV_lazy/discussions/123#discussioncomment-4659072)|1441framess/9.39s = 153.461fps|
 |realcugan-ncnn-vulkan,png|Release 20220728|100frames/12.6426513s = 7.91fps|
 |realcugan-ncnn-vulkan,jpg|Release 20220728|100frames/12.8281213s = 7.795fps|
 |realesrgan-ncnn-vulkan,png|V0.2.5.0|10frames/23.5290052s = 0.425fps|

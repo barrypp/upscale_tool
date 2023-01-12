@@ -67,8 +67,16 @@ Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames
 ```
 Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j *:*:* -s 2}
 ```
----
- 
+
+## environment
+10700k+RTX3080+RAMDISK
+
+## procedure for rife only
+```
+vspipe -c y4m rife_cuda.vpy - | ffmpeg -y -hwaccel d3d11va -i - -i 1.mp4 -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 2.mkv
+```
+
+## source
 |name|from|
 |-|-|
 |rife-ncnn-vulkan|https://github.com/nihui/rife-ncnn-vulkan/releases|
@@ -77,5 +85,3 @@ Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames 
 |rife_cuda.vpy|https://github.com/hooke007/MPV_lazy/releases, with minor change to script|
 |TensorRT_Real_ESRGAN|https://github.com/barrypp/TensorRT_EX/releases|
 
-## environment
-10700k+RTX3080+RAMDISK

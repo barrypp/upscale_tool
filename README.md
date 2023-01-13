@@ -1,7 +1,7 @@
 # upscale_tool
 
 ## procedure for RealESRGAN_and_rife
-Achieve 2~3 fps (output) on RTX 3080
+Achieve 2~3 fps (output)(720p to 2160p) on RTX 3080
 ```
 vspipe -c y4m RealESRGAN_and_rife.vpy - | ffmpeg -y -i - -i 1.mp4 -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 3.mkv
 ```
@@ -10,6 +10,7 @@ vspipe -c y4m RealESRGAN_and_rife.vpy - | ffmpeg -y -i - -i 1.mp4 -map 0:v -map 
 |RealESRGAN_and_rife.vpy|https://github.com/barrypp/upscale_tool/blob/eadb4fb493563657f0c64074b6f168ffc98b478a/RealESRGAN_and_rife.vpy|
 |vsmlrt.py|https://github.com/barrypp/upscale_tool/blob/eadb4fb493563657f0c64074b6f168ffc98b478a/vsmlrt.py|
 |vs-mlrt|https://github.com/AmusementClub/vs-mlrt/releases/tag/v12.3.test|
+|RealESRGAN_x4plus.onnx|https://github.com/HolyWu/vs-realesrgan/releases/download/model/RealESRGAN_x4plus.onnx|
 |ffmpeg|5.1.2|
 
 

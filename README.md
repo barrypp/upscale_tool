@@ -1,7 +1,19 @@
 # upscale_tool
 
-## benchmark
+## procedure for RealESRGAN_and_rife
+Achieve 2~3 fps (output) on RTX 3080
+```
+vspipe -c y4m RealESRGAN_and_rife.vpy - | ffmpeg -y -i - -i 1.mp4 -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 3.mkv
+```
+|name|src|
+|-|-|
+|RealESRGAN_and_rife.vpy|https://github.com/barrypp/upscale_tool/blob/eadb4fb493563657f0c64074b6f168ffc98b478a/RealESRGAN_and_rife.vpy|
+|vsmlrt.py|https://github.com/barrypp/upscale_tool/blob/eadb4fb493563657f0c64074b6f168ffc98b478a/vsmlrt.py|
+|vs-mlrt|https://github.com/AmusementClub/vs-mlrt/releases/tag/v12.3.test|
+|ffmpeg|5.1.2|
 
+
+## benchmark (old)
 
 |name|version|fps(source) for 720p|
 |-|-|-|
@@ -68,38 +80,7 @@ Measure-Command { realesrgan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames
 Measure-Command { realcugan-ncnn-vulkan -v -i 2_rife_frames -o 3_upscale_frames -j *:*:* -s 2}
 ```
 
-## environment
 10700k+RTX3080+RAMDISK
-
-## procedure for upscale & rife (no additional disk usage with this approach, and fast)
-```
-ffmpeg -y -hwaccel d3d11va -i 1.mp4 -fps_mode passthrough -f rawvideo -pix_fmt bgr24 pipe:1 2>ffmpeg_in.txt | TensorRT_Real_ESRGAN | ffmpeg -y -f rawvideo -pixel_format bgr24 -video_size 3840x2160 -framerate 24 -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 2.mkv
-vspipe -c y4m rife_cuda.vpy - | ffmpeg -y -hwaccel d3d11va -i - -i 1.mp4 -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 3.mkv
-
-#TensorRT.config.json
-{
-    "INPUT_H": 720,
-    "INPUT_W": 1280,
-    "INPUT_C": 3,
-    "OUTPUT_H": 2160,
-    "OUTPUT_W": 3840,        
-    "OUT_SCALE": 4,
-    "precision_mode": 16,
-    "maxBatchSize":1,
-    "serialize":false,
-    "moduleName":"RealESRGAN_x4plus"
-}
-
-#add following 2 line to rife_cuda.vpy
-video_in = core.ffms2.Source(source='2.mkv')
-container_fps=24
-```
-
-## procedure for partial upscale & rife  (no additional disk usage with this approach, and fast)
-```
-ffmpeg -y -hwaccel d3d11va -ss "00:10:00" -t "00:00:02" -i 1.mp4 -fps_mode passthrough -f rawvideo -pix_fmt bgr24 pipe:1 2>ffmpeg_in.txt | TensorRT_Real_ESRGAN | ffmpeg -y -f rawvideo -pixel_format bgr24 -video_size 3840x2160 -framerate 24 -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 2.mkv
-vspipe -c y4m rife_cuda.vpy - | ffmpeg -y -hwaccel d3d11va -i - -ss "00:10:00" -t "00:00:02" -i 1.mp4 -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 3.mkv
-```
 
 ## source
 |name|from|

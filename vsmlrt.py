@@ -434,6 +434,8 @@ class RealESRGANModel(enum.IntEnum):
     #
     RealESRGAN_x2plus = 3
     RealESRGAN_x4plus = 4
+    #
+    RealESRGAN_x4plus_anime_6B = 5
 
 
 
@@ -508,7 +510,13 @@ def RealESRGAN(
             models_path,
             "RealESRGANv2",
             "RealESRGAN_x4plus.onnx"
-        )                
+        )
+    elif model == 5:
+        network_path = os.path.join(
+            models_path,
+            "RealESRGANv2",
+            "RealESRGAN_x4plus_anime_6B.onnx"
+        )          
 
     clip_org = clip
     clip = inference_with_fallback(

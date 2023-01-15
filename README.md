@@ -9,13 +9,14 @@
 |realesr-animevideov3,RIFEModel.v4_6|17 fps|1080p to 2160p|
 |realesr-animevideov3,RIFEModel.v4_6|24 fps|720p to 2160p|
 ```
-vspipe -p -c y4m --arg in=2.mp4 upscale_and_rife.vpy .
-vspipe -p -c y4m --arg in=2.mp4 upscale_and_rife.vpy --info 
-vspipe -p -c y4m --arg in=2.mp4 upscale_and_rife.vpy --graph full > 1.dot
+ffmpeg -h encoder=hevc_nvenc
+for %i in (*.mp4,*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife.vpy .
+for %i in (*.mp4,*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife.vpy --info
+for %i in (*.mp4,*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife.vpy --graph full > 1.dot
 
-ffmpeg -y -hwaccel d3d11va -ss "00:10:20" -t "00:00:10" -i 1.mp4 -c:v hevc_nvenc 2.mp4
+for %i in (1\*.mp4,1\*.mkv) do ffmpeg -y -hwaccel d3d11va -ss "00:9:20" -t "00:00:10" -i "%i" -c:v hevc_nvenc "2\%~ni, test.mkv"
 
-vspipe -c y4m --arg in=2.mp4 upscale_and_rife.vpy - | ffmpeg -y -i - -i 2.mp4 -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 3.mkv
+for %i in (1\*.mp4,1\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife.vpy - | ffmpeg -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni, 2160p.mkv"
 
 ```
 |name|src|

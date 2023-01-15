@@ -5,6 +5,7 @@
 |-|-|-|
 |RealESRGAN_x4plus,RIFEModel.v4_6|2.6 fps|720p to 2160p|
 |RealESRGAN_x2plus,RIFEModel.v4_6|4.6 fps|1080p to 2160p|
+|RealESRGAN_x4plus_anime_6B,RIFEModel.v4_6|7.7 fps|720p to 2160p|
 ```
 vspipe -p -c y4m --arg in=2.mp4 upscale_and_rife.vpy .
 vspipe -p -c y4m --arg in=2.mp4 upscale_and_rife.vpy --info 

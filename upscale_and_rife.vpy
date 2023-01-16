@@ -10,7 +10,7 @@ from vsmlrt import RIFE, RIFEModel, CUGAN
 in_file = globals()["in"]
 upscale = "RealESRGAN" #"RealESRGAN", "cugan", None
 upfps = "RIFE" #"RIFE", None
-model_RealESRGAN = RealESRGANv2Model.RealESRGAN_x2plus #RealESRGAN_x4plus,RealESRGAN_x2plus
+model_RealESRGAN = RealESRGANv2Model.RealESRGAN_x4plus_anime_6B #RealESRGAN_x4plus,RealESRGAN_x2plus,RealESRGAN_x4plus_anime_6B
 model_RIFE = RIFEModel.v4_6
 noise_CUGAN = -1
 
@@ -25,13 +25,15 @@ GPU_thread_CUGAN = 1
 GPU_thread_RIFE = 1   	   # 使用的显卡线程数
 FPS_up = 2    			   # 补帧倍率（整数）（RIFE）
 GPU = 0        			   # 使用的显卡序号，0为排序一号
-WS_size_RealESRGAN = 512 # 约束显存（MiB)
-WS_size_CUGAN = 512
+WS_size_RealESRGAN = 512 # 约束显存（MiB) 不太理解这玩意与实际显存占用的关系
+WS_size_CUGAN = 256 # 约束显存（MiB)， bug, not enough memory
 WS_size_RIFE = 4096 # 约束显存（MiB)
 Lk_fmt = False # 锁定输出像素格式为yuv420p8
 
 #
-colorlv = clip.get_frame(0).props._ColorRange
+colorlv = None
+if "_ColorRange" in clip.get_frame(0).props :
+	colorlv = clip.get_frame(0).props._ColorRange
 fmt_in = clip.format.id
 
 fmt_out = fmt_in
@@ -64,7 +66,8 @@ elif upscale == "cugan" :
 		num_streams=GPU_thread_CUGAN, static_shape=True, output_format=1, min_shapes=[0, 0]))
 
 #
-clip = resize(clip)
+if upscale is not None :
+	clip = resize(clip)
 
 #
 if upfps == "RIFE" :

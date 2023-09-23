@@ -1,9 +1,7 @@
-# from https://github.com/AmusementClub/vs-mlrt/blob/97952cb3b9a22312feade41d19075fe0ea3bd77e/scripts/vsmlrt.py with minor change
-
-__version__ = "3.15.3"
+__version__ = "3.17.7"
 
 __all__ = [
-    "Backend",
+    "Backend", "BackendV2",
     "Waifu2x", "Waifu2xModel",
     "DPIR", "DPIRModel",
     "RealESRGAN", "RealESRGANModel",
@@ -14,10 +12,12 @@ __all__ = [
 ]
 
 import copy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import enum
 import math
 import os
+import os.path
+import platform
 import subprocess
 import sys
 import tempfile
@@ -98,6 +98,7 @@ class Backend:
         bind_thread: bool = True
         fp16_blacklist_ops: typing.Optional[typing.Sequence[str]] = None
         bf16: bool = False
+        num_threads: int = 0
 
         # internal backend attributes
         supports_onnx_serialization: bool = True
@@ -117,27 +118,27 @@ class Backend:
         opt_shapes: typing.Optional[typing.Tuple[int, int]] = None
         fp16: bool = False
         device_id: int = 0
-        workspace: typing.Optional[int] = 128
+        workspace: typing.Optional[int] = None
         verbose: bool = False
         use_cuda_graph: bool = False
         num_streams: int = 1
         use_cublas: bool = False # cuBLAS + cuBLASLt
         static_shape: bool = True
-        tf32: bool = True
+        tf32: bool = False
         log: bool = True
 
         # as of TensorRT 8.4, it can be turned off without performance penalty in most cases
-        use_cudnn: bool = True
+        use_cudnn: bool = False # changed to False since vsmlrt.vpy 3.16
         use_edge_mask_convolutions: bool = True
         use_jit_convolutions: bool = True
-
         heuristic: bool = False # only supported on Ampere+ with TensorRT 8.5+
-
         output_format: int = 0 # 0: fp32, 1: fp16
-
         min_shapes: typing.Tuple[int, int] = (0, 0)
-
         faster_dynamic_shapes: bool = True
+        force_fp16: bool = False
+        builder_optimization_level: int = 3
+        max_aux_streams: typing.Optional[int] = None
+        short_path: typing.Optional[bool] = None # True on Windows by default, False otherwise
 
         # internal backend attributes
         supports_onnx_serialization: bool = False
@@ -175,6 +176,19 @@ class Backend:
         # internal backend attributes
         supports_onnx_serialization: bool = True
 
+    @dataclass(frozen=False)
+    class ORT_DML:
+        """ backend for directml (d3d12) devices """
+
+        device_id: int = 0
+        num_streams: int = 1
+        verbosity: int = 2
+        fp16: bool = False
+        fp16_blacklist_ops: typing.Optional[typing.Sequence[str]] = None
+
+        # internal backend attributes
+        supports_onnx_serialization: bool = True
+
 
 backendT = typing.Union[
     Backend.OV_CPU,
@@ -182,7 +196,8 @@ backendT = typing.Union[
     Backend.ORT_CUDA,
     Backend.TRT,
     Backend.OV_GPU,
-    Backend.NCNN_VK
+    Backend.NCNN_VK,
+    Backend.ORT_DML,
 ]
 
 
@@ -198,16 +213,20 @@ class Waifu2xModel(enum.IntEnum):
     upconv_7_photo = 4
     upresnet10 = 5
     cunet = 6
+    swin_unet_art = 7
+    swin_unet_photo = 8 # 20230329
+    swin_unet_photo_v2 = 9 # 20230407
+    swin_unet_art_scan = 10 # 20230504
 
 
 def Waifu2x(
     clip: vs.VideoNode,
     noise: typing.Literal[-1, 0, 1, 2, 3] = -1,
-    scale: typing.Literal[1, 2] = 2,
+    scale: typing.Literal[1, 2, 4] = 2,
     tiles: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     tilesize: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     overlap: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
-    model: typing.Literal[0, 1, 2, 3, 4, 5, 6] = 6,
+    model: Waifu2xModel = Waifu2xModel.cunet,
     backend: backendT = Backend.OV_CPU(),
     preprocess: bool = True
 ) -> vs.VideoNode:
@@ -223,17 +242,20 @@ def Waifu2x(
     if not isinstance(noise, int) or noise not in range(-1, 4):
         raise ValueError(f'{func_name}: "noise" must be -1, 0, 1, 2, or 3')
 
-    if not isinstance(scale, int) or scale not in (1, 2):
-        raise ValueError(f'{func_name}: "scale" must be 1 or 2')
+    if not isinstance(scale, int) or scale not in (1, 2, 4):
+        raise ValueError(f'{func_name}: "scale" must be 1, 2 or 4')
 
     if not isinstance(model, int) or model not in Waifu2xModel.__members__.values():
-        raise ValueError(f'{func_name}: "model" must be 0, 1, 2, 3, 4, 5, or 6')
+        raise ValueError(f'{func_name}: invalid "model"')
 
     if model == 0 and noise == 0:
         raise ValueError(
             f'{func_name}: "anime_style_art" model'
             ' does not support noise reduction level 0'
         )
+
+    if model in range(7) and scale not in (1, 2):
+        raise ValueError(f'{func_name}: "scale" must be 1 or 2')
 
     if model == 0:
         if clip.format.color_family != vs.GRAY:
@@ -242,7 +264,7 @@ def Waifu2x(
         raise ValueError(f'{func_name}: "clip" must be of RGB color family')
 
     if overlap is None:
-        overlap_w = overlap_h = [8, 8, 8, 8, 8, 4, 4][model]
+        overlap_w = overlap_h = [8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4][model]
     elif isinstance(overlap, int):
         overlap_w = overlap_h = overlap
     else:
@@ -295,7 +317,7 @@ def Waifu2x(
             model_name = "scale2.0x_model.onnx"
         else:
             model_name = f"noise{noise}_scale2.0x_model.onnx"
-    else:
+    elif model == 6:
         if scale == 1:
             scale_name = ""
         else:
@@ -305,6 +327,32 @@ def Waifu2x(
             model_name = "scale2.0x_model.onnx"
         else:
             model_name = f"noise{noise}_{scale_name}model.onnx"
+    elif model == 7:
+        if scale == 1:
+            scale_name = ""
+        elif scale == 2:
+            scale_name = "scale2x"
+        elif scale == 4:
+            scale_name = "scale4x"
+
+        if noise == -1:
+            if scale == 1:
+                raise ValueError("swin_unet model for \"noise == -1\" and \"scale == 1\" does not exist")
+
+            model_name = f"{scale_name}.onnx"
+        else:
+            if scale == 1:
+                model_name = f"noise{noise}.onnx"
+            else:
+                model_name = f"noise{noise}_{scale_name}.onnx"
+    elif model in (8, 9, 10):
+        scale_name = "scale4x"
+        if noise == -1:
+            model_name = f"{scale_name}.onnx"
+        else:
+            model_name = f"noise{noise}_{scale_name}.onnx"
+    else:
+        raise ValueError(f"{func_name}: inavlid model {model}")
 
     network_path = os.path.join(folder_path, model_name)
 
@@ -314,13 +362,20 @@ def Waifu2x(
         backend=backend
     )
 
-    if scale == 1 and clip.width // width == 2:
+    if model in range(8) and scale == 1 and clip.width // width == 2:
         # emulating cv2.resize(interpolation=cv2.INTER_CUBIC)
         # cr: @AkarinVS
-        clip = core.fmtc.resample(
+
+        clip = fmtc_resample(
             clip, scale=0.5,
             kernel="impulse", impulse=[-0.1875, 1.375, -0.1875],
             kovrspl=2
+        )
+
+    elif model in (8, 9, 10) and scale != 4:
+        clip = core.resize.Bicubic(
+            clip, clip.width * scale // 4, clip.height * scale // 4,
+            filter_param_a=0, filter_param_b=0.5
         )
 
     return clip
@@ -340,7 +395,7 @@ def DPIR(
     tiles: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     tilesize: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     overlap: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
-    model: typing.Literal[0, 1, 2, 3] = 0,
+    model: DPIRModel = DPIRModel.drunet_gray,
     backend: backendT = Backend.OV_CPU()
 ) -> vs.VideoNode:
 
@@ -353,7 +408,7 @@ def DPIR(
         raise ValueError(f"{func_name}: only constant format 16/32 bit float input supported")
 
     if not isinstance(model, int) or model not in DPIRModel.__members__.values():
-        raise ValueError(f'{func_name}: "model" must be 0, 1, 2 or 3')
+        raise ValueError(f'{func_name}: invalid "model"')
 
     if model in [0, 2] and clip.format.color_family != vs.GRAY:
         raise ValueError(f'{func_name}: "clip" must be of GRAY color family')
@@ -431,13 +486,13 @@ class RealESRGANModel(enum.IntEnum):
     animevideo_xsx4 = 1
     # v3
     animevideov3 = 2 # 4x
-    #
-    RealESRGAN_x2plus = 3
-    RealESRGAN_x4plus = 4
-    #
-    RealESRGAN_x4plus_anime_6B = 5
-
-
+    # contributed: janaiV2(2x) https://github.com/the-database/mpv-upscale-2x_animejanai/releases/tag/2.0.0 maintainer: hooke007 
+    animejanaiV2L1 = 5005
+    animejanaiV2L2 = 5006
+    animejanaiV2L3 = 5007
+    # 
+    RealESRGAN_x2plus = 301
+    RealESRGAN_x4plus = 302
 
 RealESRGANv2Model = RealESRGANModel
 
@@ -447,7 +502,7 @@ def RealESRGAN(
     tiles: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     tilesize: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     overlap: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
-    model: typing.Literal[0, 1, 2] = 0,
+    model: RealESRGANv2Model = RealESRGANv2Model.animevideo_xsx2,
     backend: backendT = Backend.OV_CPU(),
     scale: typing.Optional[float] = None
 ) -> vs.VideoNode:
@@ -464,7 +519,7 @@ def RealESRGAN(
         raise ValueError(f'{func_name}: "clip" must be of RGB color family')
 
     if not isinstance(model, int) or model not in RealESRGANv2Model.__members__.values():
-        raise ValueError(f'{func_name}: "model" must be 0, 1 or 2')
+        raise ValueError(f'{func_name}: invalid "model"')
 
     if overlap is None:
         overlap_w = overlap_h = 8
@@ -499,24 +554,18 @@ def RealESRGAN(
             "RealESRGANv2",
             "realesr-animevideov3.onnx"
         )
-    elif model == 3:
+    elif model in [5005, 5006, 5007]:
         network_path = os.path.join(
             models_path,
             "RealESRGANv2",
-            "RealESRGAN_x2plus.onnx"
+            f"{RealESRGANv2Model(model).name}.onnx".replace('_', '-')
         )
-    elif model == 4:
+    elif model in [301, 302]:
         network_path = os.path.join(
             models_path,
             "RealESRGANv2",
-            "RealESRGAN_x4plus.onnx"
-        )
-    elif model == 5:
-        network_path = os.path.join(
-            models_path,
-            "RealESRGANv2",
-            "RealESRGAN_x4plus_anime_6B.onnx"
-        )          
+            f"{RealESRGANv2Model(model).name}.onnx"
+        )        
 
     clip_org = clip
     clip = inference_with_fallback(
@@ -532,13 +581,12 @@ def RealESRGAN(
         assert scale_h == scale_v
 
         if scale != scale_h:
-            clip = core.resize.Lanczos(clip=clip, height=clip_org.height*scale, width=clip_org.width*scale)
-            # rescale = scale / scale_h
+            rescale = scale / scale_h
 
-            # if rescale > 1:
-            #     clip = core.fmtc.resample(clip, scale=rescale, kernel="lanczos", taps=4)
-            # else:
-            #     clip = core.fmtc.resample(clip, scale=rescale, kernel="lanczos", taps=4, fh=1/rescale, fv=1/rescale)
+            if rescale > 1:
+                clip = core.resize.Lanczos(clip, int(clip_org.width * scale), int(clip_org.height * scale), filter_param_a=4)
+            else:
+                clip = fmtc_resample(clip, scale=rescale, kernel="lanczos", taps=4, fh=1/rescale, fv=1/rescale)
 
     return clip
 
@@ -553,7 +601,6 @@ def CUGAN(
     tilesize: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     overlap: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     backend: backendT = Backend.OV_CPU(),
-    preprocess: bool = True,
     alpha: float = 1.0,
     version: typing.Literal[1, 2] = 1, # 1: legacy, 2: pro
     conformance: bool = True # currently specifies dynamic range compression for cugan-pro
@@ -597,8 +644,6 @@ def CUGAN(
         overlap_w, overlap_h = overlap
 
     multiple = 2
-
-    width, height = clip.width, clip.height
 
     (tile_w, tile_h), (overlap_w, overlap_h) = calc_tilesize(
         tiles=tiles, tilesize=tilesize,
@@ -710,12 +755,24 @@ def CUGAN(
 
 
 def get_rife_input(clip: vs.VideoNode) -> typing.List[vs.VideoNode]:
-    empty = clip.std.BlankClip(format=vs.GRAYS, length=1)
+    assert clip.format.sample_type == vs.FLOAT
+    gray_format = vs.GRAYS if clip.format.bits_per_sample == 32 else vs.GRAYH
 
-    if hasattr(core, 'akarin'):
-        horizontal = as_bits(core.akarin.Expr(empty, 'X 2 * width 1 - / 1 -'), clip)
-        vertical = as_bits(core.akarin.Expr(empty, 'Y 2 * height 1 - / 1 -'), clip)
+
+    if (hasattr(core, 'akarin') and
+        b"width" in core.akarin.Version()["expr_features"] and
+        b"height" in core.akarin.Version()["expr_features"]
+    ):
+        if b"fp16" in core.akarin.Version()["expr_features"]:
+            empty = clip.std.BlankClip(format=gray_format, length=1)
+        else:
+            empty = clip.std.BlankClip(format=vs.GRAYS, length=1)
+
+        horizontal = bits_as(core.akarin.Expr(empty, 'X 2 * width 1 - / 1 -'), clip)
+        vertical = bits_as(core.akarin.Expr(empty, 'Y 2 * height 1 - / 1 -'), clip)
     else:
+        empty = clip.std.BlankClip(format=vs.GRAYS, length=1)
+
         from functools import partial
 
         def meshgrid_core(n: int, f: vs.VideoFrame, horizontal: bool) -> vs.VideoFrame:
@@ -740,13 +797,11 @@ def get_rife_input(clip: vs.VideoNode) -> typing.List[vs.VideoNode]:
 
             return fout
 
-        horizontal = as_bits(core.std.ModifyFrame(empty, empty, partial(meshgrid_core, horizontal=True)), clip)
-        vertical = as_bits(core.std.ModifyFrame(empty, empty, partial(meshgrid_core, horizontal=False)), clip)
+        horizontal = bits_as(core.std.ModifyFrame(empty, empty, partial(meshgrid_core, horizontal=True)), clip)
+        vertical = bits_as(core.std.ModifyFrame(empty, empty, partial(meshgrid_core, horizontal=False)), clip)
 
     horizontal = horizontal.std.Loop(clip.num_frames)
     vertical = vertical.std.Loop(clip.num_frames)
-
-    gray_format = vs.GRAYS if clip.format.bits_per_sample == 32 else vs.GRAYH
 
     multiplier_h = clip.std.BlankClip(format=gray_format, color=2/(clip.width-1), keep=True)
 
@@ -773,8 +828,10 @@ def RIFEMerge(
     tiles: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     tilesize: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     overlap: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
-    model: typing.Literal[40, 42, 43, 44, 45, 46] = 44,
-    backend: backendT = Backend.OV_CPU()
+    model: RIFEModel = RIFEModel.v4_4,
+    backend: backendT = Backend.OV_CPU(),
+    ensemble: bool = False,
+    _implementation: typing.Optional[typing.Literal[1, 2]] = None
 ) -> vs.VideoNode:
     """ temporal MaskedMerge-like interface for the RIFE model
 
@@ -807,6 +864,9 @@ def RIFEMerge(
     if mask.format.color_family != vs.GRAY:
         raise ValueError(f'{func_name}: "mask" must be of GRAY color family')
 
+    if tiles is not None or tilesize is not None or overlap is not None:
+        raise ValueError(f'{func_name}: tiling is not supported')
+
     if overlap is None:
         overlap_w = overlap_h = 0
     elif isinstance(overlap, int):
@@ -819,6 +879,26 @@ def RIFEMerge(
         raise ValueError(f'{func_name}: (32 / Fraction(scale)) must be an integer')
     multiple = int(multiple_frac.numerator)
     scale = float(Fraction(scale))
+
+    network_path = os.path.join(
+        models_path,
+        "rife_v2",
+        f"rife_v{model // 10}.{model % 10}{'_ensemble' if ensemble else ''}.onnx"
+    )
+    if _implementation == 2 and os.path.exists(network_path) and scale == 1.0:
+        implementation_version = 2
+        multiple = 1 # v2 implements internal padding
+        clips = [clipa, clipb, mask]
+    else:
+        implementation_version = 1
+
+        network_path = os.path.join(
+            models_path,
+            "rife",
+            f"rife_v{model // 10}.{model % 10}{'_ensemble' if ensemble else ''}.onnx"
+        )
+
+        clips = [clipa, clipb, mask, *get_rife_input(clipa)]
 
     (tile_w, tile_h), (overlap_w, overlap_h) = calc_tilesize(
         tiles=tiles, tilesize=tilesize,
@@ -837,20 +917,14 @@ def RIFEMerge(
         trt_opt_shapes=(tile_w, tile_h)
     )
 
-    network_path = os.path.join(
-        models_path,
-        "rife",
-        f"rife_v{model // 10}.{model % 10}.onnx"
-    )
-
-    clips = [clipa, clipb, mask, *get_rife_input(clipa)]
-
     if scale == 1.0:
         return inference_with_fallback(
             clips=clips, network_path=network_path,
             overlap=(overlap_w, overlap_h), tilesize=(tile_w, tile_h),
             backend=backend
         )
+    elif ensemble or implementation_version != 1:
+        raise ValueError(f'{func_name}: currently not supported')
     else:
         import onnx
         from onnx.numpy_helper import from_array, to_array
@@ -913,8 +987,10 @@ def RIFE(
     tiles: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     tilesize: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
     overlap: typing.Optional[typing.Union[int, typing.Tuple[int, int]]] = None,
-    model: typing.Literal[40, 42, 43, 44, 45, 46] = 44,
-    backend: backendT = Backend.OV_CPU()
+    model: RIFEModel = RIFEModel.v4_4,
+    backend: backendT = Backend.OV_CPU(),
+    ensemble: bool = False,
+    _implementation: typing.Optional[typing.Literal[1, 2]] = None
 ) -> vs.VideoNode:
     """ RIFE: Real-Time Intermediate Flow Estimation for Video Frame Interpolation
 
@@ -933,6 +1009,10 @@ def RIFE(
         scale: Controls the process resolution for optical flow model.
             32 / fractions.Fraction(scale) must be an integer.
             scale=0.5 is recommended for 4K video.
+
+        _implementation: (None, 1 or 2, experimental and maybe removed in the future)
+            Switch between different onnx implementation.
+            Implmementation will be selected based on internal heuristic if it is None.
     """
 
     func_name = "vsmlrt.RIFE"
@@ -949,6 +1029,9 @@ def RIFE(
     if multi < 2:
         raise ValueError(f'{func_name}: RIFE: multi must be at least 2')
 
+    if tiles is not None or tilesize is not None or overlap is not None:
+        raise ValueError(f'{func_name}: tiling is not supported')
+
     gray_format = vs.GRAYS if clip.format.bits_per_sample == 32 else vs.GRAYH
 
     initial = core.std.Interleave([clip] * (multi - 1))
@@ -964,10 +1047,11 @@ def RIFE(
     output0 = RIFEMerge(
         clipa=initial, clipb=terminal, mask=timepoint,
         scale=scale, tiles=tiles, tilesize=tilesize, overlap=overlap,
-        model=model, backend=backend
+        model=model, backend=backend, ensemble=ensemble,
+        _implementation=_implementation
     )
 
-    clip = as_bits(clip, output0)
+    clip = bits_as(clip, output0)
     initial = core.std.Interleave([clip] * (multi - 1))
 
     if hasattr(core, 'akarin') and hasattr(core.akarin, 'Select'):
@@ -1001,7 +1085,10 @@ def get_engine_path(
     tf32: bool,
     use_cudnn: bool,
     input_format: int,
-    output_format: int
+    output_format: int,
+    builder_optimization_level: int,
+    max_aux_streams: typing.Optional[int],
+    short_path: typing.Optional[bool]
 ) -> str:
 
     with open(network_path, "rb") as file:
@@ -1016,29 +1103,35 @@ def get_engine_path(
         device_name = f"device{device_id}"
 
     if static_shape:
-        shape_str = f".{opt_shapes[0]}x{opt_shapes[1]}"
+        shape_str = f"{opt_shapes[0]}x{opt_shapes[1]}"
     else:
         shape_str = (
-            f".min{min_shapes[0]}x{min_shapes[1]}"
+            f"min{min_shapes[0]}x{min_shapes[1]}"
             f"_opt{opt_shapes[0]}x{opt_shapes[1]}"
             f"_max{max_shapes[0]}x{max_shapes[1]}"
         )
 
-    return (
-        network_path +
+    identity = (
         shape_str +
         ("_fp16" if fp16 else "") +
-        ("_no-tf32" if not tf32 else "") +
+        ("_tf32" if tf32 else "") +
         (f"_workspace{workspace}" if workspace is not None else "") +
+        f"_opt{builder_optimization_level}" +
+        (f"_max-aux-streams{max_aux_streams}" if max_aux_streams is not None else "") +
         f"_trt-{trt_version}" +
         ("_cublas" if use_cublas else "") +
         ("_cudnn" if use_cudnn else "") +
         "_I-" + ("fp32" if input_format == 0 else "fp16") +
         "_O-" + ("fp32" if output_format == 0 else "fp16") +
         f"_{device_name}" +
-        f"_{checksum:x}" +
-        ".engine"
+        f"_{checksum:x}"
     )
+
+    if short_path or (short_path is None and platform.system() == "Windows"):
+        dirname, basename = os.path.split(network_path)
+        return os.path.join(dirname, f"{zlib.crc32((basename + identity).encode()):x}.engine")
+    else:
+        return f"{network_path}.{identity}.engine"
 
 
 def trtexec(
@@ -1048,12 +1141,12 @@ def trtexec(
     max_shapes: typing.Tuple[int, int],
     fp16: bool,
     device_id: int,
-    workspace: typing.Optional[int] = 128,
+    workspace: typing.Optional[int] = None,
     verbose: bool = False,
     use_cuda_graph: bool = False,
     use_cublas: bool = False,
     static_shape: bool = True,
-    tf32: bool = True,
+    tf32: bool = False,
     log: bool = False,
     use_cudnn: bool = True,
     use_edge_mask_convolutions: bool = True,
@@ -1063,7 +1156,11 @@ def trtexec(
     input_format: int = 0,
     output_format: int = 0,
     min_shapes: typing.Tuple[int, int] = (0, 0),
-    faster_dynamic_shapes: bool = True
+    faster_dynamic_shapes: bool = True,
+    force_fp16: bool = False,
+    builder_optimization_level: int = 3,
+    max_aux_streams: typing.Optional[int] = None,
+    short_path: typing.Optional[bool] = None
 ) -> str:
 
     # tensort runtime version, e.g. 8401 => 8.4.1
@@ -1074,6 +1171,10 @@ def trtexec(
 
     if isinstance(max_shapes, int):
         max_shapes = (max_shapes, max_shapes)
+
+    if force_fp16:
+        fp16 = True
+        tf32 = False
 
     engine_path = get_engine_path(
         network_path=network_path,
@@ -1088,7 +1189,10 @@ def trtexec(
         tf32=tf32,
         use_cudnn=use_cudnn,
         input_format=input_format,
-        output_format=output_format
+        output_format=output_format,
+        builder_optimization_level=builder_optimization_level,
+        max_aux_streams=max_aux_streams,
+        short_path=short_path
     )
 
     if os.access(engine_path, mode=os.R_OK):
@@ -1144,17 +1248,38 @@ def trtexec(
     if verbose:
         args.append("--verbose")
 
-    disabled_tactic_sources = []
-    if not use_cublas:
-        disabled_tactic_sources.extend(["-CUBLAS", "-CUBLAS_LT"])
-    if not use_cudnn:
-        disabled_tactic_sources.append("-CUDNN")
-    if not use_edge_mask_convolutions and trt_version >= 8401:
-        disabled_tactic_sources.append("-EDGE_MASK_CONVOLUTIONS")
-    if not use_jit_convolutions and trt_version >= 8500:
-        disabled_tactic_sources.append("-JIT_CONVOLUTIONS")
-    if disabled_tactic_sources:
-        args.append(f"--tacticSources={','.join(disabled_tactic_sources)}")
+    preview_features = []
+    if (use_cublas or use_cudnn) and trt_version >= 8600:
+        preview_features.append("-disableExternalTacticSourcesForCore0805")
+
+    if preview_features and trt_version >= 8500:
+        args.append(f"--preview={','.join(preview_features)}")
+
+    tactic_sources = []
+
+    if use_cublas:
+        tactic_sources.extend(["+CUBLAS", "+CUBLAS_LT"])
+    else:
+        tactic_sources.extend(["-CUBLAS", "-CUBLAS_LT"])
+
+    if use_cudnn:
+        tactic_sources.append("+CUDNN")
+    else:
+        tactic_sources.append("-CUDNN")
+
+    if trt_version >= 8401:
+        if use_edge_mask_convolutions:
+            tactic_sources.append("+EDGE_MASK_CONVOLUTIONS")
+        else:
+            tactic_sources.append("-EDGE_MASK_CONVOLUTIONS")
+
+    if trt_version >= 8500:
+        if use_jit_convolutions:
+            tactic_sources.append("+JIT_CONVOLUTIONS")
+        else:
+            tactic_sources.append("-JIT_CONVOLUTIONS")
+
+    args.append(f"--tacticSources={','.join(tactic_sources)}")
 
     if use_cuda_graph:
         args.extend((
@@ -1162,21 +1287,43 @@ def trtexec(
             "--noDataTransfers"
         ))
     else:
-        args.append("--buildOnly")
+        if trt_version >= 8600:
+            args.append("--skipInference")
+        else:
+            args.append("--buildOnly")
 
     if not tf32:
         args.append("--noTF32")
 
     if heuristic and trt_version >= 8500 and core.trt.DeviceProperties(device_id)["major"] >= 8:
-        args.append("--heuristic")
+        if trt_version < 8600:
+            args.append("--heuristic")
+        else:
+            builder_optimization_level = 2
 
     args.extend([
         "--inputIOFormats=fp32:chw" if input_format == 0 else "--inputIOFormats=fp16:chw",
         "--outputIOFormats=fp32:chw" if output_format == 0 else "--outputIOFormats=fp16:chw"
     ])
 
-    if faster_dynamic_shapes and not static_shape and trt_version >= 8500:
+    if faster_dynamic_shapes and not static_shape and 8500 <= trt_version < 8600:
         args.append("--preview=+fasterDynamicShapes0805")
+
+    if force_fp16:
+        if trt_version >= 8401:
+            args.extend([
+                "--layerPrecisions=*:fp16",
+                "--layerOutputTypes=*:fp16",
+                "--precisionConstraints=obey"
+            ])
+        else:
+            raise ValueError('"force_fp16" is not available')
+
+    if trt_version >= 8600:
+        args.append(f"--builderOptimizationLevel={builder_optimization_level}")
+
+        if max_aux_streams is not None:
+            args.append(f"--maxAuxStreams={max_aux_streams}")
 
     if log:
         env_key = "TRTEXEC_LOG_FILE"
@@ -1184,7 +1331,7 @@ def trtexec(
 
         if prev_env_value is not None and len(prev_env_value) > 0:
             # env_key has been set, no extra action
-            env = {env_key: prev_env_value}
+            env = {env_key: prev_env_value, "CUDA_MODULE_LOADING": "LAZY"}
             subprocess.run(args, env=env, check=True, stdout=sys.stderr)
         else:
             time_str = time.strftime('%y%m%d_%H%M%S', time.localtime())
@@ -1194,7 +1341,7 @@ def trtexec(
                 f"trtexec_{time_str}.log"
             )
 
-            env = {env_key: log_filename}
+            env = {env_key: log_filename, "CUDA_MODULE_LOADING": "LAZY"}
 
             completed_process = subprocess.run(args, env=env, check=False, stdout=sys.stderr)
 
@@ -1210,7 +1357,7 @@ def trtexec(
                 else:
                     raise RuntimeError(f"trtexec execution fails but no log is found")
     else:
-        subprocess.run(args, check=True, stdout=sys.stderr)
+        subprocess.run(args, env={"CUDA_MODULE_LOADING": "LAZY"}, check=True, stdout=sys.stderr)
 
     return engine_path
 
@@ -1267,6 +1414,8 @@ def init_backend(
         backend = Backend.OV_GPU()
     elif backend is Backend.NCNN_VK: # type: ignore
         backend = Backend.NCNN_VK()
+    elif backend is Backend.ORT_DML: # type: ignore
+        backend = Backend.ORT_DML()
 
     backend = copy.deepcopy(backend)
 
@@ -1295,7 +1444,10 @@ def _inference(
         if not os.path.exists(network_path):
             raise RuntimeError(
                 f'"{network_path}" not found, '
-                f'built-in models can be found at https://github.com/AmusementClub/vs-mlrt/releases'
+                "built-in models can be found at"
+                "https://github.com/AmusementClub/vs-mlrt/releases/tag/model-20211209, "
+                "https://github.com/AmusementClub/vs-mlrt/releases/tag/model-20220923 and "
+                "https://github.com/AmusementClub/vs-mlrt/releases/tag/external-models"
             )
 
     if isinstance(backend, Backend.ORT_CPU):
@@ -1303,6 +1455,18 @@ def _inference(
             clips, network_path,
             overlap=overlap, tilesize=tilesize,
             provider="CPU", builtin=False,
+            num_streams=backend.num_streams,
+            verbosity=backend.verbosity,
+            fp16=backend.fp16,
+            path_is_serialization=path_is_serialization,
+            fp16_blacklist_ops=backend.fp16_blacklist_ops
+        )
+    elif isinstance(backend, Backend.ORT_DML):
+        clip = core.ort.Model(
+            clips, network_path,
+            overlap=overlap, tilesize=tilesize,
+            provider="DML", builtin=False,
+            device_id=backend.device_id,
             num_streams=backend.num_streams,
             verbosity=backend.verbosity,
             fp16=backend.fp16,
@@ -1327,6 +1491,7 @@ def _inference(
         config = lambda: dict(
             CPU_THROUGHPUT_STREAMS=backend.num_streams,
             CPU_BIND_THREAD="YES" if backend.bind_thread else "NO",
+            CPU_THREADS_NUM=backend.num_threads,
             ENFORCE_BF16="YES" if backend.bf16 else "NO"
         )
 
@@ -1385,7 +1550,11 @@ def _inference(
             input_format=clips[0].format.bits_per_sample == 16,
             output_format=backend.output_format,
             min_shapes=backend.min_shapes,
-            faster_dynamic_shapes=backend.faster_dynamic_shapes
+            faster_dynamic_shapes=backend.faster_dynamic_shapes,
+            force_fp16=backend.force_fp16,
+            builder_optimization_level=backend.builder_optimization_level,
+            max_aux_streams=backend.max_aux_streams,
+            short_path=backend.short_path
         )
         clip = core.trt.Model(
             clips, engine_path,
@@ -1485,7 +1654,7 @@ def get_input_name(network_path: str) -> str:
     return model.graph.input[0].name
 
 
-def as_bits(clip: vs.VideoNode, target: vs.VideoNode) -> vs.VideoNode:
+def bits_as(clip: vs.VideoNode, target: vs.VideoNode) -> vs.VideoNode:
     if clip.format.bits_per_sample == target.format.bits_per_sample:
         return clip
     else:
@@ -1499,3 +1668,140 @@ def as_bits(clip: vs.VideoNode, target: vs.VideoNode) -> vs.VideoNode:
             subsampling_h=clip.format.subsampling_h
         )
         return clip.resize.Point(format=format)
+
+
+class BackendV2:
+    """ simplified backend interfaces with keyword-only arguments
+
+    More exposed arguments may be added for each backend,
+    but existing ones will always function in a forward compatible way.
+    """
+
+    @staticmethod
+    def TRT(*,
+        num_streams: int = 1,
+        fp16: bool = False,
+        tf32: bool = False,
+        output_format: int = 0, # 0: fp32, 1: fp16
+        workspace: typing.Optional[int] = None,
+        use_cuda_graph: bool = False,
+        static_shape: bool = True,
+        min_shapes: typing.Tuple[int, int] = (0, 0),
+        opt_shapes: typing.Optional[typing.Tuple[int, int]] = None,
+        max_shapes: typing.Optional[typing.Tuple[int, int]] = None,
+        force_fp16: bool = False,
+        use_cublas: bool = False,
+        use_cudnn: bool = False,
+        device_id: int = 0,
+        **kwargs
+    ) -> Backend.TRT:
+
+        return Backend.TRT(
+            num_streams=num_streams,
+            fp16=fp16, force_fp16=force_fp16, tf32=tf32, output_format=output_format,
+            workspace=workspace, use_cuda_graph=use_cuda_graph,
+            static_shape=static_shape,
+            min_shapes=min_shapes, opt_shapes=opt_shapes, max_shapes=max_shapes,
+            use_cublas=use_cublas, use_cudnn=use_cudnn,
+            device_id=device_id,
+            **kwargs
+        )
+
+    @staticmethod
+    def NCNN_VK(*,
+        num_streams: int = 1,
+        fp16: bool = False,
+        device_id: int = 0,
+        **kwargs
+    ) -> Backend.NCNN_VK:
+        return Backend.NCNN_VK(
+            num_streams=num_streams,
+            fp16=fp16,
+            device_id=device_id,
+            **kwargs
+        )
+
+    @staticmethod
+    def ORT_CUDA(*,
+        num_streams: int = 1,
+        fp16: bool = False,
+        cudnn_benchmark: bool = True,
+        device_id: int = 0,
+        **kwargs
+    ) -> Backend.ORT_CUDA:
+        return Backend.ORT_CUDA(
+            num_streams=num_streams,
+            fp16=fp16,
+            cudnn_benchmark=cudnn_benchmark,
+            device_id=device_id,
+            **kwargs
+        )
+
+    @staticmethod
+    def OV_CPU(*,
+        num_streams: typing.Union[int, str] = 1,
+        bf16: bool = False,
+        bind_thread: bool = True,
+        num_threads: int = 0,
+        **kwargs
+    ) -> Backend.OV_CPU:
+        return Backend.OV_CPU(
+            num_streams=num_streams,
+            bf16=bf16,
+            bind_thread=bind_thread,
+            num_threads=num_threads,
+            **kwargs
+        )
+
+    @staticmethod
+    def ORT_CPU(*,
+        num_streams: int = 1,
+        **kwargs
+    ) -> Backend.ORT_CPU:
+        return Backend.ORT_CPU(
+            num_streams=num_streams,
+            **kwargs
+        )
+
+    @staticmethod
+    def OV_GPU(*,
+        num_streams: typing.Union[int, str] = 1,
+        fp16: bool = False,
+        device_id: int = 0,
+        **kwargs
+    ) -> Backend.OV_GPU:
+        return Backend.OV_GPU(
+            num_streams=num_streams,
+            fp16=fp16,
+            device_id=device_id,
+            **kwargs
+        )
+
+    @staticmethod
+    def ORT_DML(*,
+        device_id: int = 0,
+        num_streams: int = 1,
+        fp16: bool = False,
+        **kwargs
+    ) -> Backend.ORT_DML:
+        return Backend.ORT_DML(
+            device_id=device_id,
+            num_streams=num_streams,
+            fp16=fp16,
+            **kwargs
+        )
+
+
+def fmtc_resample(clip: vs.VideoNode, **kwargs) -> vs.VideoNode:
+    clip_org = clip
+
+    if clip.format.sample_type == vs.FLOAT and clip.format.bits_per_sample != 32:
+        format = clip.format.replace(core=core, bits_per_sample=32)
+        clip = core.resize.Point(clip, format=format.id)
+
+    clip = core.fmtc.resample(clip, **kwargs)
+
+    if clip.format.bits_per_sample != clip_org.format.bits_per_sample:
+        clip = core.resize.Point(clip, format=clip_org.format.id)
+
+    return clip

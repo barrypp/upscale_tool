@@ -1,6 +1,33 @@
 # upscale_tool
 
-## procedure for upscale_and_rife
+## procedure for upscale_and_rife_2
+
+```
+path=%path%;C:\ProgramFiles\mpv
+
+ffmpeg -h encoder=hevc_nvenc
+for %i in (1\*.mp4,1\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy .
+for %i in (1\*.mp4,1\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --info
+for %i in (1\*.mp4,1\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --graph full > 1.dot
+
+for %i in (1\*.mp4,1\*.mkv) do ffmpeg -y -hwaccel d3d11va -ss "00:9:20" -t "00:00:10" -i "%i" -c:v hevc_nvenc "2\%~ni, test.mkv"
+
+for %i in (1\*.mp4,1\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife.vpy - | ffmpeg -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni, 2160p.mkv"
+
+```
+|name|src|
+|-|-|
+|ffms2|https://github.com/FFMS/ffms2/releases/download/2.40/ffms2-2.40-msvc.7z|
+|upscale_and_rife_2.vpy|https://github.com/barrypp/upscale_tool/blob/c0b85670f300a65c44ce5843adc697156180152d/upscale_and_rife_2.vpy|
+|vsmlrt.py|https://github.com/barrypp/upscale_tool/blob/c0b85670f300a65c44ce5843adc697156180152d/vsmlrt.py|
+|k7sfunc.py|https://github.com/barrypp/upscale_tool/blob/c0b85670f300a65c44ce5843adc697156180152d/k7sfunc.py|
+|mpv-lazy|mpv-lazy-20230630-vsMega|
+|RealESRGAN_x2plus.onnx|https://github.com/HolyWu/vs-realesrgan/releases/download/model/RealESRGAN_x2plus.onnx|
+|RealESRGAN_x4plus.onnx|https://github.com/HolyWu/vs-realesrgan/releases/download/model/RealESRGAN_x4plus.onnx|
+|ffmpeg|n6.0-18|
+
+
+## procedure for upscale_and_rife (old)
 |name|fps(output)|size|
 |-|-|-|
 |RealESRGAN_x4plus,RIFEModel.v4_6|2.6 fps|720p to 2160p|

@@ -9,15 +9,16 @@ import k7sfunc as k7f
 in_file = globals()["in"]
 upscale = "RealESRGAN" #"RealESRGAN", None
 upfps = "RIFE" #"RIFE", None
-model_RealESRGAN = 302#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302
+model_RealESRGAN = 5007#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV2L3 = 5007
 
 # RealESRGAN
 H_Pre = 720
 Lt_Hd = True
 Model = model_RealESRGAN
+Scale = 4 if Model==2 or Model==302 else 2
 Gpu = 0
 RealESRGAN_Gpu_T = 1
-RealESRGAN_St_Eng = True if model_RealESRGAN == 302 else False
+RealESRGAN_St_Eng = True if model_RealESRGAN == 302 or model_RealESRGAN == 5007 else False
 Ws_Size = 0
 H_Max = 2160
 Lk_Fmt = False
@@ -60,15 +61,17 @@ clip = core.ffms2.Source(source=in_file)  # Load a video track in mkv file
 
 #
 if upscale == "RealESRGAN" :
-	ret = k7f.FMT_CTRL(clip, h_max=2160, h_ret=True)
+	#ret = k7f.FMT_CTRL(clip, h_max=2160, h_ret=True)
 	#clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
-	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=4 if Model==2 or Model==302 else 2, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size)
+	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size)
+	if clip.height < 2160 :
+		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size)	
 	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
 
 #
 if upfps == "RIFE" :
-	# ret = k7f.FPS_CTRL(clip, fps_in=container_fps, fps_ret=True)
-	# clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
+	#ret = k7f.FPS_CTRL(clip, fps_in=container_fps, fps_ret=True)
+	#clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
 	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, sc_mode=Sc_Mode, fps_num=Fps_Num, t_tta=T_Tta, ext_proc=Ext_Proc, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
 
 #

@@ -110,7 +110,6 @@ def FMT_CTRL(
 	spl_c : float = 1/3,
 	fmt_pix : typing.Literal[0, 1, 2, 3] = 0,
 	vs_t : int = vs_thd_dft,
-	is_img : bool = False,
 ) -> vs.VideoNode :
 
 	func_name = "FMT_CTRL"
@@ -135,7 +134,7 @@ def FMT_CTRL(
 	spl_b, spl_c = float(spl_b), float(spl_c)
 	w_in, h_in = input.width, input.height
 	# https://github.com/mpv-player/mpv/blob/master/video/filter/vf_vapoursynth.c
-	fmt_mpv = [vs.YUV420P8, vs.YUV420P10, vs.YUV422P8, vs.YUV422P10, vs.YUV410P8, vs.YUV411P8, vs.YUV440P8, vs.YUV444P8, vs.YUV444P10]
+	fmt_mpv = [vs.RGB24,vs.YUV420P8, vs.YUV420P10, vs.YUV422P8, vs.YUV422P10, vs.YUV410P8, vs.YUV411P8, vs.YUV440P8, vs.YUV444P8, vs.YUV444P10]
 	fmt_pass = [vs.YUV420P8, vs.YUV420P10, vs.YUV444P16]
 	fmt_safe = [vs.YUV444P8, vs.YUV444P10, vs.YUV444P16]
 
@@ -152,7 +151,7 @@ def FMT_CTRL(
 					h_in = h_in - 1
 				clip = core.resize.Bicubic(clip=input, width=w_in, height=h_in, filter_param_a=spl_b, filter_param_b=spl_c, format=fmt_out)
 			else :
-				clip = core.resize.Bilinear(clip=input, format=fmt_out, matrix_s="709" if is_img else None)
+				clip = core.resize.Bilinear(clip=input, format=fmt_out)
 	else :
 		if fmt_in not in fmt_mpv :
 			fmt_out = vs.YUV420P10
@@ -163,7 +162,7 @@ def FMT_CTRL(
 					h_in = h_in - 1
 				clip = core.resize.Bicubic(clip=input, width=w_in, height=h_in, filter_param_a=spl_b, filter_param_b=spl_c, format=fmt_out)
 			else :
-				clip = core.resize.Bilinear(clip=input, format=fmt_out, matrix_s="709" if is_img else None)
+				clip = core.resize.Bilinear(clip=input, format=fmt_out)
 		else :
 			fmt_out = fmt_in
 			clip = input

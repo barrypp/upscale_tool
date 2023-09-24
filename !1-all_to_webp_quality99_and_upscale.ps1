@@ -1,7 +1,7 @@
 $env:Path = 'C:\Program Files\7-Zip;C:\ProgramFiles\mpv;' + $env:Path
 
 
-ls -Filter '1/*.cbz' | ForEach-Object {
+ls -Filter '1/*.zip' | ForEach-Object {
     7z x $_.FullName -o"2/tmp"
     mkdir -Force 3/tmp
 
@@ -12,8 +12,9 @@ ls -Filter '1/*.cbz' | ForEach-Object {
 
     #
     ls -Filter 'tmp.*.txt' | ForEach-Object {
-        cmd /c "vspipe -c y4m --arg ""in=$($_.Name)"" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -c:v libwebp -quality 99 3/tmp/tmp_%d.webp"
-        $b = 1
+        #cmd /c "vspipe -c y4m --arg ""in=$($_.Name)"" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -c:v libwebp -quality 99 3/tmp/tmp_%d.webp"
+        vspipe -p --arg "in=$($_.Name)" upscale_and_rife_2.vpy .
+        $b = 0
         Get-Content $_.Name | % {
             $c = split-path $_ -LeafBase
             mv 3/tmp/tmp_$b.webp 3/tmp/$c.webp

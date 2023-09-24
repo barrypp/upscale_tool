@@ -5,12 +5,13 @@
 |-|-|-|
 |animejanaiV2L3,RIFEModel.v4_6|11 fps|720p to 2160p|
 |animejanaiV2L3,RIFEModel.v4_6|20 fps|1080p to 2160p|
+|animejanaiV2L3,jpg to webp|1.6 fps|720p to 2160p|
 ```
 path=%path%;C:\ProgramFiles\mpv
 
 for %i in (*.mp4,*.mkv) do ffprobe -hide_banner "%i" 2>>1.txt
 
-ffmpeg -h encoder=hevc_nvenc
+ffmpeg -hide_banner -h encoder=hevc_nvenc
 # for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy .
 for %i in (2\*.mp4,2\*.mkv,2\*.jpg) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --info
 for %i in (2\*.mp4,2\*.mkv,2\*.jpg) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --graph full > 1.dot
@@ -18,15 +19,14 @@ for %i in (2\*.mp4,2\*.mkv,2\*.jpg) do vspipe -p -c y4m --arg "in=%i" upscale_an
 for %i in (1\*.mp4,1\*.mkv) do ffmpeg -hide_banner -y -hwaccel d3d11va -ss "00:00:00" -t "00:00:01" -i "%i" -c copy "2\%~ni, test.mkv"
 
 for %i in (2\*.mp4,2\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni.mkv"
-
-for %i in (2\*.jpg) do vspipe -c y4m --arg "in=%i" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -quality 99 -compression_level 6 "3\%~ni.webp"
 ```
 |name|src|
 |-|-|
 |ffms2|https://github.com/FFMS/ffms2/releases/download/2.40/ffms2-2.40-msvc.7z|
-|upscale_and_rife_2.vpy|https://github.com/barrypp/upscale_tool/blob/c0b85670f300a65c44ce5843adc697156180152d/upscale_and_rife_2.vpy|
+|upscale_and_rife_2.vpy|https://github.com/barrypp/upscale_tool/blob/b0de74c2f45699101ac53a6084f7d7e9fc415d91/upscale_and_rife_2.vpy|
+|!1-all_to_webp_quality99_and_upscale.ps1|https://github.com/barrypp/upscale_tool/blob/b0de74c2f45699101ac53a6084f7d7e9fc415d91/!1-all_to_webp_quality99_and_upscale.ps1|
 |vsmlrt.py|https://github.com/barrypp/upscale_tool/blob/c0b85670f300a65c44ce5843adc697156180152d/vsmlrt.py|
-|k7sfunc.py|https://github.com/barrypp/upscale_tool/blob/c0b85670f300a65c44ce5843adc697156180152d/k7sfunc.py|
+|k7sfunc.py|https://github.com/barrypp/upscale_tool/blob/b0de74c2f45699101ac53a6084f7d7e9fc415d91/k7sfunc.py|
 |mpv-lazy|mpv-lazy-20230630-vsMega|
 |RealESRGAN_x2plus.onnx|https://github.com/HolyWu/vs-realesrgan/releases/download/model/RealESRGAN_x2plus.onnx|
 |RealESRGAN_x4plus.onnx|https://github.com/HolyWu/vs-realesrgan/releases/download/model/RealESRGAN_x4plus.onnx|

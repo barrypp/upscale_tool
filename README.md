@@ -1,18 +1,21 @@
 # upscale_tool
 
 ## procedure for upscale_and_rife_2
-
+|name|fps(output)|size|
+|-|-|-|
+|animejanaiV2L3,RIFEModel.v4_6|11 fps|720p to 2160p|
+|animejanaiV2L3,RIFEModel.v4_6|20 fps|1080p to 2160p|
 ```
 path=%path%;C:\ProgramFiles\mpv
 
 ffmpeg -h encoder=hevc_nvenc
-for %i in (1\*.mp4,1\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy .
-for %i in (1\*.mp4,1\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --info
-for %i in (1\*.mp4,1\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --graph full > 1.dot
+# for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy .
+for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --info
+for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --graph full > 1.dot
 
-for %i in (1\*.mp4,1\*.mkv) do ffmpeg -y -hwaccel d3d11va -ss "00:9:20" -t "00:00:10" -i "%i" -c:v hevc_nvenc "2\%~ni, test.mkv"
+for %i in (1\*.mp4,1\*.mkv) do ffmpeg -hide_banner -y -hwaccel d3d11va -ss "00:00:00" -t "00:00:01" -i "%i" -c copy "2\%~ni, test.mkv"
 
-for %i in (1\*.mp4,1\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife.vpy - | ffmpeg -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni, 2160p.mkv"
+for %i in (2\*.mp4,2\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni, out.mkv"
 
 ```
 |name|src|

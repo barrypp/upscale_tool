@@ -7,8 +7,9 @@ import k7sfunc as k7f
 
 #
 in_file = globals()["in"]
+is_img = True
 upscale = "RealESRGAN" #"RealESRGAN", None
-upfps = "RIFE" #"RIFE", None
+upfps = "None" #"RIFE", None
 model_RealESRGAN = 5007#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV2L3 = 5007
 
 # RealESRGAN
@@ -17,7 +18,7 @@ Lt_Hd = True
 Model = model_RealESRGAN
 Scale = 4 if Model==2 or Model==302 else 2
 Gpu = 0
-RealESRGAN_Gpu_T = 1
+RealESRGAN_Gpu_T = 1 if is_img else 1
 RealESRGAN_St_Eng = True if model_RealESRGAN == 302 or model_RealESRGAN == 5007 else False
 Ws_Size = 0
 H_Max = 2160
@@ -57,7 +58,14 @@ Lk_Fmt = False
 ## <True|False> 锁定像素格式为yuv420p8
 
 #
-clip = core.ffms2.Source(source=in_file)  # Load a video track in mkv file
+if is_img :
+	with open(in_file) as f:
+		lines = [line.rstrip('\n') for line in f]
+	clip = core.imwri.Read(filename=lines)
+	clip = core.resize.Bilinear(clip=clip, format=vs.YUV444P10, matrix_s="709")
+else :
+	clip = core.ffms2.Source(source=in_file)
+
 
 #
 if upscale == "RealESRGAN" :
@@ -68,6 +76,7 @@ if upscale == "RealESRGAN" :
 		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size)	
 	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
 
+
 #
 if upfps == "RIFE" :
 	#ret = k7f.FPS_CTRL(clip, fps_in=container_fps, fps_ret=True)
@@ -75,4 +84,6 @@ if upfps == "RIFE" :
 	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, sc_mode=Sc_Mode, fps_num=Fps_Num, t_tta=T_Tta, ext_proc=Ext_Proc, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
 
 #
+#clip = core.imwri.Write(clip=clip, imgformat="webp", filename="3/tmp/tmp_%d.webp", quality=99)
 clip.set_output()
+

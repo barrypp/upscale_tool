@@ -110,6 +110,7 @@ def FMT_CTRL(
 	spl_c : float = 1/3,
 	fmt_pix : typing.Literal[0, 1, 2, 3] = 0,
 	vs_t : int = vs_thd_dft,
+	is_img : bool = False,
 ) -> vs.VideoNode :
 
 	func_name = "FMT_CTRL"
@@ -151,7 +152,7 @@ def FMT_CTRL(
 					h_in = h_in - 1
 				clip = core.resize.Bicubic(clip=input, width=w_in, height=h_in, filter_param_a=spl_b, filter_param_b=spl_c, format=fmt_out)
 			else :
-				clip = core.resize.Bilinear(clip=input, format=fmt_out)
+				clip = core.resize.Bilinear(clip=input, format=fmt_out, matrix_s="709" if is_img else None)
 	else :
 		if fmt_in not in fmt_mpv :
 			fmt_out = vs.YUV420P10
@@ -162,7 +163,7 @@ def FMT_CTRL(
 					h_in = h_in - 1
 				clip = core.resize.Bicubic(clip=input, width=w_in, height=h_in, filter_param_a=spl_b, filter_param_b=spl_c, format=fmt_out)
 			else :
-				clip = core.resize.Bilinear(clip=input, format=fmt_out)
+				clip = core.resize.Bilinear(clip=input, format=fmt_out, matrix_s="709" if is_img else None)
 		else :
 			fmt_out = fmt_in
 			clip = input
@@ -619,6 +620,7 @@ def ESRGAN_NV(
 	st_eng : bool = False,
 	ws_size : int = 0,
 	vs_t : int = vs_thd_dft,
+	is_img : bool = False,
 ) -> vs.VideoNode :
 
 	func_name = "ESRGAN_NV"
@@ -648,15 +650,16 @@ def ESRGAN_NV(
 	core.num_threads = vs_t
 	w_in, h_in = input.width, input.height
 	size_in = w_in * h_in
-	colorlv = getattr(input.get_frame(0).props, "_ColorRange", 0)
+	colorlv = getattr(input.get_frame(0).props, "_ColorRange", 0) if not is_img else None
 	fmt_in = input.format.id
 
-	if (not lt_hd and (size_in > 1280 * 720)) or (size_in > 2048 * 1080) :
+	# if (not lt_hd and (size_in > 1280 * 720)) or (size_in > 2048 * 1080) :
+	if (not lt_hd and (size_in > 1280 * 720)):
 		raise Exception("源分辨率超过限制的范围，已临时中止。")
 	if not st_eng and (((w_in > 2048) or (h_in > 1080)) or ((w_in < 64) or (h_in < 64))) :
 		raise Exception("源分辨率不属于动态引擎支持的范围，已临时中止。")
 
-	cut1 = input.resize.Bilinear(format=vs.RGBH, matrix_in_s="709")
+	cut1 = input.resize.Bilinear(format=vs.RGBH, matrix_in_s="709" if not is_img else None)
 	cut2 = vsmlrt.RealESRGANv2(clip=cut1, scale=scale, model=model, backend=vsmlrt.BackendV2.TRT(
 		num_streams=gpu_t, force_fp16=True, output_format=1,
 		workspace=None if ws_size < 128 else (ws_size if st_eng else ws_size * 2),
@@ -664,7 +667,7 @@ def ESRGAN_NV(
 		static_shape=st_eng, min_shapes=[0, 0] if st_eng else [64, 64],
 		opt_shapes=None if st_eng else ([1920, 1080] if lt_hd else [1280, 720]), max_shapes=None if st_eng else ([2048, 1080] if lt_hd else [1280, 720]),
 		device_id=gpu, short_path=True))
-	output = core.resize.Bilinear(clip=cut2, format=fmt_in, matrix_s="709", range=1 if colorlv==0 else None)
+	output = core.resize.Bilinear(clip=cut2, format=fmt_in, matrix_s="709" if not is_img else None, range=1 if colorlv==0 else None)
 
 	return output
 

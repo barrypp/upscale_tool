@@ -8,15 +8,18 @@
 ```
 path=%path%;C:\ProgramFiles\mpv
 
+for %i in (*.mp4,*.mkv) do ffprobe -hide_banner "%i" 2>>1.txt
+
 ffmpeg -h encoder=hevc_nvenc
 # for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy .
-for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --info
-for %i in (2\*.mp4,2\*.mkv) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --graph full > 1.dot
+for %i in (2\*.mp4,2\*.mkv,2\*.jpg) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --info
+for %i in (2\*.mp4,2\*.mkv,2\*.jpg) do vspipe -p -c y4m --arg "in=%i" upscale_and_rife_2.vpy --graph full > 1.dot
 
 for %i in (1\*.mp4,1\*.mkv) do ffmpeg -hide_banner -y -hwaccel d3d11va -ss "00:00:00" -t "00:00:01" -i "%i" -c copy "2\%~ni, test.mkv"
 
-for %i in (2\*.mp4,2\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni, out.mkv"
+for %i in (2\*.mp4,2\*.mkv) do vspipe -c y4m --arg "in=%i" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -i "%i" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "3\%~ni.mkv"
 
+for %i in (2\*.jpg) do vspipe -c y4m --arg "in=%i" upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -quality 99 -compression_level 6 "3\%~ni.webp"
 ```
 |name|src|
 |-|-|

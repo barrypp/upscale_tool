@@ -7,9 +7,9 @@ import k7sfunc as k7f
 
 #
 in_file = globals()["in"]
-is_img = True
+is_img = False
 upscale = "RealESRGAN" #"RealESRGAN", None
-upfps = "None" #"RIFE", None
+upfps = "RIFE" #"RIFE", None
 model_RealESRGAN = 5007#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV2L3 = 5007
 
 # RealESRGAN
@@ -63,22 +63,19 @@ if is_img :
 	with open(in_file) as f:
 		lines = [line.rstrip('\n') for line in f]
 	clip = core.imwri.Read(filename=lines)
-	ori_height = clip.height
 	#clip = core.resize.Bilinear(clip=clip, format=vs.YUV444P10, matrix_s="709")
 else :
 	clip = core.ffms2.Source(source=in_file)
 
 
 #
-if upscale == "RealESRGAN" :
+if upscale == "RealESRGAN" and clip.height < 2160 :
 	#ret = k7f.FMT_CTRL(clip, h_max=2160, h_ret=True)
 	#clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
-	if clip.height < 2160 :
-		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
+	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	if clip.height < 2160 :
 		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)	
-	if ori_height < 2160 :
-		clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
+	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
 
 
 #
@@ -88,6 +85,7 @@ if upfps == "RIFE" :
 	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, sc_mode=Sc_Mode, fps_num=Fps_Num, t_tta=T_Tta, ext_proc=Ext_Proc, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
 
 #
-clip = core.imwri.Write(clip=clip, imgformat="webp", filename="3/tmp/tmp_%d.webp", quality=99)
+if is_img :
+	clip = core.imwri.Write(clip=clip, imgformat="webp", filename="3/tmp/tmp_%d.webp", quality=99)
 clip.set_output()
 

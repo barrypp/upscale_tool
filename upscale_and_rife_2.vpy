@@ -57,11 +57,13 @@ Lk_Fmt = False
 ## 整数，约束显存（MiB），静态引擎的最小值为128（动态引擎自动双倍），设为低于此数的值即最大化利用
 ## <True|False> 锁定像素格式为yuv420p8
 
+
 #
 if is_img :
 	with open(in_file) as f:
 		lines = [line.rstrip('\n') for line in f]
 	clip = core.imwri.Read(filename=lines)
+	ori_height = clip.height
 	#clip = core.resize.Bilinear(clip=clip, format=vs.YUV444P10, matrix_s="709")
 else :
 	clip = core.ffms2.Source(source=in_file)
@@ -71,10 +73,12 @@ else :
 if upscale == "RealESRGAN" :
 	#ret = k7f.FMT_CTRL(clip, h_max=2160, h_ret=True)
 	#clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
-	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
+	if clip.height < 2160 :
+		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	if clip.height < 2160 :
 		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)	
-	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
+	if ori_height < 2160 :
+		clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
 
 
 #

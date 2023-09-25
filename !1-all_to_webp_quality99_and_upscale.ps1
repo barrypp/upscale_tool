@@ -6,7 +6,7 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     mkdir -Force 3/tmp
 
     #
-    wsl parallel -j 8 -m identify ::: ./2/tmp/*.jpg | ConvertFrom-Csv -Delimiter " " -Header a,b,c | foreach {
+    wsl parallel -j 8 -m identify ::: ./2/tmp/* | ConvertFrom-Csv -Delimiter " " -Header a,b,c | foreach {
         $_.a | Out-File -FilePath tmp.$($_.c).txt -Append
     }
 

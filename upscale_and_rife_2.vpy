@@ -7,9 +7,9 @@ import k7sfunc as k7f
 
 #
 in_file = globals()["in"]
-is_img = False
+is_img = globals()["is_img"] == "True"
 upscale = "RealESRGAN" #"RealESRGAN", None
-upfps = "RIFE" #"RIFE", None
+upfps = "RIFE" if not is_img else "None" #"RIFE", None
 model_RealESRGAN = 5007#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV2L3 = 5007
 
 # RealESRGAN
@@ -86,6 +86,6 @@ if upfps == "RIFE" :
 
 #
 if is_img :
-	clip = core.imwri.Write(clip=clip, imgformat="webp", filename="3/tmp/tmp_%d.webp", quality=99)
+	clip = core.imwri.Write(clip=clip, imgformat="bmp", filename="3/tmp/tmp_%d.bmp")
 clip.set_output()
 

@@ -650,7 +650,7 @@ def ESRGAN_NV(
 	w_in, h_in = input.width, input.height
 	size_in = w_in * h_in
 	colorlv = getattr(input.get_frame(0).props, "_ColorRange", 0) if not is_img else None
-	fmt_in = input.format.id
+	fmt_in = input.format.id if input.format.id != vs.GRAY8 else vs.RGB24
 
 	# if (not lt_hd and (size_in > 1280 * 720)) or (size_in > 2048 * 1080) :
 	if (not lt_hd and (size_in > 1280 * 720)):

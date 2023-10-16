@@ -9,7 +9,7 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     ls -Filter './2/tmp/*.gif' | ForEach-Object {
         $a = split-path $_ -LeafBase
         ffmpeg -hide_banner -y -i "$_" -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K "./2/tmp/$a.mkv"
-        cmd /c "vspipe -c y4m --arg in=./2/tmp/$a.mkv --arg is_img=False upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K ./3/tmp/$a.mkv"
+        cmd /c "vspipe -c y4m --arg in=./2/tmp/$a.mkv --arg is_img=False upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 ./3/tmp/$a.mkv"
         rm $_
         rm ./2/tmp/$a.mkv*
     }

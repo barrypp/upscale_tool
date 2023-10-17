@@ -36,7 +36,7 @@ Lk_Fmt = False
 # RIFE
 H_Pre = 1440
 Lt_D2k = True
-Sc_Mode = 1
+Sc_Mode = 0 # for encode
 Fps_Num = 2
 T_Tta = False
 Ext_Proc = True
@@ -86,6 +86,6 @@ if upfps == "RIFE" :
 
 #
 if is_img :
-	clip = core.imwri.Write(clip=clip, imgformat="bmp", filename="3/tmp/tmp_%d.bmp")
+	clip = core.imwri.Write(clip=clip, imgformat="bmp", filename="2/tmp3/tmp_%d.bmp")
 clip.set_output()
 

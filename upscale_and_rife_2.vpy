@@ -36,6 +36,7 @@ Lk_Fmt = False
 # RIFE
 H_Pre = 1440
 Lt_D2k = True
+Model = 48
 Sc_Mode = 0 # for encode
 Fps_Num = 2
 T_Tta = False
@@ -47,6 +48,7 @@ Ws_Size = 0
 Lk_Fmt = False
 ## 整数，预降低处理源高度（填你的显示器高度）
 ## <True|False> 是否对超过DCI2K分辨率的源进行补帧
+## <40|46|48> 使用的模型
 ## <0|1|2> 场景切换检测的模式，0为禁用
 ## <2|3|4> 补帧倍率
 ## <True|False> 是否使用ensemble版模型
@@ -70,19 +72,15 @@ else :
 
 #
 if upscale == "RealESRGAN" and clip.height < 2160 :
-	#ret = k7f.FMT_CTRL(clip, h_max=2160, h_ret=True)
-	#clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
 	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	if clip.height < 2160 :
 		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)	
 	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
-
+	
 
 #
 if upfps == "RIFE" :
-	#ret = k7f.FPS_CTRL(clip, fps_in=container_fps, fps_ret=True)
-	#clip = k7f.FMT_CTRL(clip, h_max=H_Pre, fmt_pix=1 if Lk_Fmt else 0)
-	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, sc_mode=Sc_Mode, fps_num=Fps_Num, t_tta=T_Tta, ext_proc=Ext_Proc, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
+	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, model=Model, sc_mode=Sc_Mode, fps_num=Fps_Num, t_tta=T_Tta, ext_proc=Ext_Proc, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
 
 #
 if is_img :

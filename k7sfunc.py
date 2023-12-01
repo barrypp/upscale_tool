@@ -134,7 +134,7 @@ def FMT_CTRL(
 	spl_b, spl_c = float(spl_b), float(spl_c)
 	w_in, h_in = input.width, input.height
 	# https://github.com/mpv-player/mpv/blob/master/video/filter/vf_vapoursynth.c
-	fmt_mpv = [vs.YUV420P8, vs.YUV420P10, vs.YUV422P8, vs.YUV422P10, vs.YUV410P8, vs.YUV411P8, vs.YUV440P8, vs.YUV444P8, vs.YUV444P10]
+	fmt_mpv = [vs.RGB24, vs.YUV420P8, vs.YUV420P10, vs.YUV422P8, vs.YUV422P10, vs.YUV410P8, vs.YUV411P8, vs.YUV440P8, vs.YUV444P8, vs.YUV444P10]
 	fmt_pass = [vs.YUV420P8, vs.YUV420P10, vs.YUV444P16]
 	fmt_safe = [vs.YUV444P8, vs.YUV444P10, vs.YUV444P16]
 

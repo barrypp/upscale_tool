@@ -11,7 +11,7 @@ ls -Filter '1/*.cbz' | ForEach-Object {
 
     #
     mv 2/tmp1/*.mkv,2/tmp1/*.jxl 2/tmp4
-    mv 2/tmp1/*.png,2/tmp1/*.jpg,2/tmp1/*.bmp 2/tmp2
+    mv 2/tmp1/*.png,2/tmp1/*.jpg,2/tmp1/*.bmp,2/tmp1/*.webp 2/tmp2
     
     # gif
     ls -Filter '2/tmp1/*.gif' | ForEach-Object {
@@ -21,7 +21,7 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     }
 
     #
-    identify 2/tmp2/* | ConvertFrom-Csv -Delimiter " " -Header a,b,c,d,e,f | foreach {
+    magick identify 2/tmp2/* | ConvertFrom-Csv -Delimiter " " -Header a,b,c,d,e,f | foreach {
         $a = $_.c -split "x"
         if ([int]$a[1] -ge 2160){
             mv $_.a 2/tmp3
@@ -49,7 +49,7 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     ls -Filter '2/tmp3/*' | foreach-Object -Parallel {
         $frame_sync = $using:frame_sync
         $vmaf_sync = $using:vmaf_sync
-        mogrify -path ./2/tmp4 -quality 90 -format jxl $_
+        magick mogrify -path ./2/tmp4 -quality 90 -format jxl $_
         $a = Split-Path $_ -LeafBase
         ffmpeg -v warning -i "./2/tmp4/$a.jxl" -i $_ -lavfi "[0:v]setpts=PTS-STARTPTS[dis];[1:v]setpts=PTS-STARTPTS[ref];[dis][ref]libvmaf=n_threads=8:model=path='model/vmaf_4k_v0.6.1.json':log_fmt=csv:log_path=2/tmp.vmaf.csv" -f null -
         $c = Import-Csv 2/tmp.vmaf.csv

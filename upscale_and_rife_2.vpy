@@ -15,11 +15,10 @@ model_RealESRGAN = 5007#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, anim
 # RealESRGAN
 H_Pre = 720
 Lt_Hd = True
-Model = model_RealESRGAN
-Scale = 4 if Model==2 or Model==302 else 2
+RealESRGAN_Model = model_RealESRGAN
 Gpu = 0
-RealESRGAN_Gpu_T = 1 if is_img else 1
-RealESRGAN_St_Eng = True if model_RealESRGAN == 302 or model_RealESRGAN == 5007 else False
+RealESRGAN_Gpu_T = 1
+RealESRGAN_St_Eng = True if model_RealESRGAN == 301 or model_RealESRGAN == 302 or model_RealESRGAN == 5007 else False
 Ws_Size = 0
 H_Max = 2160
 Lk_Fmt = False
@@ -36,11 +35,12 @@ Lk_Fmt = False
 # RIFE
 H_Pre = 1440
 Lt_D2k = True
-Model = 48
-Sc_Mode = 0 # for encode
-Fps_Num = 2
-T_Tta = False
+RIFE_Model = 4131
 Ext_Proc = True
+T_Tta = False
+Fps_Num = 2
+Fps_Den = 1
+Sc_Mode = 0 # for encode
 Gpu = 0
 RIFE_Gpu_T = 1
 RIFE_St_Eng = False
@@ -48,11 +48,12 @@ Ws_Size = 0
 Lk_Fmt = False
 ## 整数，预降低处理源高度（填你的显示器高度）
 ## <True|False> 是否对超过DCI2K分辨率的源进行补帧
-## <40|46|48> 使用的模型
-## <0|1|2> 场景切换检测的模式，0为禁用
-## <2|3|4> 补帧倍率
+## <46|413|4131> 使用的模型
+## <True|False> 是否使用外部的填充裁切处理
 ## <True|False> 是否使用ensemble版模型
-## <True|False> 是否使用外部的填充裁切处理（禁用将强制锁定为静态引擎）
+## 整数，Fps_Num/Fps_Den 的值即帧率倍数
+## 整数
+## <0|1|2> 场景切换检测的模式，0为禁用
 ## 使用的显卡序号，0为排序一号
 ## <1|2|3> 显卡线程数
 ## <True|False> 是否使用静态引擎（需要对不同分辨率的源各进行预处理）；动态引擎自适应不同分辨率（QVGA→DCI4K）
@@ -72,15 +73,14 @@ else :
 
 #
 if upscale == "RealESRGAN" and clip.height < 2160 :
-	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
+	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=RealESRGAN_Model, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	if clip.height < 2160 :
-		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, scale=Scale, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)	
+		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=RealESRGAN_Model, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
-	
 
 #
 if upfps == "RIFE" :
-	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, model=Model, sc_mode=Sc_Mode, fps_num=Fps_Num, t_tta=T_Tta, ext_proc=Ext_Proc, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
+	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, model=RIFE_Model, ext_proc=Ext_Proc, t_tta=T_Tta, fps_in=container_fps, fps_num=Fps_Num, fps_den=Fps_Den, sc_mode=Sc_Mode, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
 
 #
 if is_img :

@@ -1,28 +1,33 @@
 $env:Path = 'C:\Program Files\7-Zip;C:\ProgramFiles\mpv;' + $env:Path
 Import-Module ./5-plot.psm1
 
-#ffmpeg -hide_banner -h encoder=hevc_nvenc
-#ffmpeg -hide_banner -filters -encoders -hwaccels
-#ffprobe -v error -select_streams v:0 -show_entries stream -i 1.mkv
-#ls *.mkv | % {$bit_rate = ffprobe -v error -select_streams v:0 -show_entries format=bit_rate -of csv=s=x:p=0 -i $_; "{0,5:F}Mbps {1}" -f ($bit_rate/1Mb),($_.Name) } | sort -Desc
+#ffmpeg -hide_banner -h encoder=hevc_nvenc -filters -encoders -hwaccels
+#ffprobe -v error -select_streams v:0 -show_entries stream/frame/stream -i 1.mkv
+#ffmpeg -hide_banner -i 1.mkv -vf vfrdet -an  -f null -
+
 #ls 1/*.mkv | % { $a = split-path $_ -Leaf; vspipe -p -c y4m --arg "in=1/$a" --arg is_img=False upscale_and_rife_2.vpy --info } 
-#ls 1/*.mkv | % { $a = split-path $_ -Leaf; vspipe -p -c y4m --arg "in=1/$a" --arg is_img=False upscale_and_rife_2.vpy --graph full > 1.dot } 
+#ls 1/*.mkv | % { $a = split-path $_ -Leaf; vspipe -p -c y4m --arg "in=1/$a" --arg is_img=False upscale_and_rife_2.vpy --graph full > 1.dot }
+#ffprobe -v error -select_streams v:0 -show_entries frame=pts_time,pkt_size,pict_type -of csv=s=,:p=0 -i .\p7_cq00.mkv
+#ls *.mkv | % {$bit_rate = ffprobe -v error -select_streams v:0 -show_entries format=bit_rate -of csv=s=x:p=0 -i $_; "{0,5:F}Mbps {1}" -f ($bit_rate/1Mb),($_.Name) } | sort -Desc
+
 #ls 1/*.mkv | % { $a = Split-Path $_ -LeafBase; ffmpeg -hide_banner -y -i "$_" -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 "3/$a.mkv" }
 #ls -Filter '1/*' | % { $a = split-path $_ -LeafBase; cmd /c "vspipe -c y4m --arg ""in=$_"" --arg is_img=False upscale_and_rife_2.vpy - | ffmpeg -hide_banner -y -i - -i ""$_"" -map 0:v -map 1 -map -1:v -c:a copy -c:s copy -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 ""./3/$a.mkv""" }
 
 $a = (ls 1/*)[0]
 [float]$duration = ffprobe -v error -select_streams v:0 -show_entries format=duration -of csv=s=x:p=0 -i $a
 [float]$height = ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=s=x:p=0 -i $a
-ffmpeg -v warning -stats -y -hwaccel d3d11va -ss "00:00:00" -t "00:00:10" -i $a -ss ($duration/6) -t "00:00:10" -i $a -ss ($duration*2/6) -t "00:00:10" -i $a -ss ($duration*3/6) -t "00:00:10" -i $a -ss ($duration*4/6) -t "00:00:10" -i $a -ss ($duration*5/6) -t "00:00:10" -i $a -filter_complex '[0:v][1:v][2:v][3:v][4:v][5:v]concat=n=6:v=1:a=0[v]' -map '[v]' -c:v hevc_nvenc -preset p7 -tune lossless -pix_fmt p010le -profile:v main10 2/test.mkv
+ffmpeg -v warning -stats -y -hwaccel d3d11va -ss (Get-Random -Maximum ($duration-60)) -t "00:00:10" -i $a -ss (Get-Random -Maximum ($duration-60)) -t "00:00:10" -i $a -ss (Get-Random -Maximum ($duration-60)) -t "00:00:10" -i $a -ss (Get-Random -Maximum ($duration-60)) -t "00:00:10" -i $a -ss (Get-Random -Maximum ($duration-60)) -t "00:00:10" -i $a -ss (Get-Random -Maximum ($duration-60)) -t "00:00:10" -i $a -filter_complex '[0:v][0:a][1:v][1:a][2:v][2:a][3:v][3:a][4:v][4:a][5:v][5:a]concat=n=6:v=1:a=1[v][a]' -map '[v]' -map '[a]' -c:a flac -c:v hevc_nvenc -preset p7 -tune lossless -pix_fmt p010le -profile:v main10 2/test.mkv
 if (2160 -gt $height){
     cmd /c "vspipe -c y4m --arg in=2/test.mkv --arg is_img=False upscale_and_rife_2.vpy - | ffmpeg -v warning -stats -y -i - -map 0:v -c:v hevc_nvenc -preset p7 -tune lossless -pix_fmt p010le -profile:v main10 2/test2.mkv"
 }
 else{
     mv 2/test.mkv 2/test2.mkv
 }
-ffmpeg -v warning -stats -y -i 2/test2.mkv -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 3/p7_cq26.mkv
-ffmpeg -v warning -stats -y -i 2/test2.mkv -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 28 3/p7_cq28.mkv
-ffmpeg -v warning -stats -y -i 2/test2.mkv -c:v libx265 -crf 18 -preset slow 3/slow_crf18.mkv
+ffmpeg -v warning -stats -y -i 2/test2.mkv -map 0:v -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K 3/p7_cq00.mkv
+ffmpeg -v warning -stats -y -i 2/test2.mkv -map 0:v -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 3/p7_cq26.mkv
+ffmpeg -v warning -stats -y -i 2/test2.mkv -map 0:v -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 28 3/p7_cq28.mkv
+ffmpeg -v warning -stats -y -i 2/test2.mkv -map 0:v -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 30 3/p7_cq30.mkv
+ffmpeg -v warning -stats -y -i 2/test2.mkv -map 0:v -c:v libx265 -crf 18 -preset slow 3/slow_crf18.mkv
 
 $vmaf = @{}
 ls 3/*.mkv | sort | ForEach-Object {

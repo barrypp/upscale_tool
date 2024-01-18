@@ -17,7 +17,7 @@ H_Pre = 720
 Lt_Hd = True
 RealESRGAN_Model = model_RealESRGAN
 Gpu = 0
-RealESRGAN_Gpu_T = 1
+Gpu_T = 1
 RealESRGAN_St_Eng = True if model_RealESRGAN == 301 or model_RealESRGAN == 302 or model_RealESRGAN == 5007 else False
 Ws_Size = 0
 H_Max = 2160
@@ -42,7 +42,7 @@ Fps_Num = 2
 Fps_Den = 1
 Sc_Mode = 0 # for encode
 Gpu = 0
-RIFE_Gpu_T = 1
+Gpu_T = 1
 RIFE_St_Eng = False
 Ws_Size = 0
 Lk_Fmt = False
@@ -70,17 +70,16 @@ if is_img :
 else :
 	clip = core.ffms2.Source(source=in_file)
 
-
 #
 if upscale == "RealESRGAN" and clip.height < 2160 :
-	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=RealESRGAN_Model, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
+	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=RealESRGAN_Model, gpu=Gpu, gpu_t=Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	if clip.height < 2160 :
-		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=RealESRGAN_Model, gpu=Gpu, gpu_t=RealESRGAN_Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
+		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=RealESRGAN_Model, gpu=Gpu, gpu_t=Gpu_T, st_eng=RealESRGAN_St_Eng, ws_size=Ws_Size,is_img=is_img)
 	clip = k7f.FMT_CTRL(clip, h_max=H_Max, fmt_pix=1 if Lk_Fmt else 0)
 
 #
 if upfps == "RIFE" :
-	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, model=RIFE_Model, ext_proc=Ext_Proc, t_tta=T_Tta, fps_in=container_fps, fps_num=Fps_Num, fps_den=Fps_Den, sc_mode=Sc_Mode, gpu=Gpu, gpu_t=RIFE_Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
+	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, model=RIFE_Model, ext_proc=Ext_Proc, t_tta=T_Tta, fps_in=float(clip.fps), fps_num=Fps_Num, fps_den=Fps_Den, sc_mode=Sc_Mode, gpu=Gpu, gpu_t=Gpu_T, st_eng=RIFE_St_Eng, ws_size=Ws_Size)
 
 #
 if is_img :

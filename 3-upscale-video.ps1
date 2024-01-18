@@ -5,8 +5,8 @@ Import-Module ./5-plot.psm1
 #ffprobe -v error -select_streams v:0 -show_entries stream/frame/stream -i 1.mkv
 #ffmpeg -hide_banner -i 1.mkv -vf vfrdet -an  -f null -
 
-#ls 1/*.mkv | % { $a = split-path $_ -Leaf; vspipe -p -c y4m --arg "in=1/$a" --arg is_img=False upscale_and_rife_2.vpy --info } 
-#ls 1/*.mkv | % { $a = split-path $_ -Leaf; vspipe -p -c y4m --arg "in=1/$a" --arg is_img=False upscale_and_rife_2.vpy --graph full > 1.dot }
+#ls 2/*.mkv | % { vspipe -p -c y4m --arg "in=$_" --arg is_img=False upscale_and_rife_2.vpy --info }
+#ls 2/*.mkv | % { vspipe -p -c y4m --arg "in=$_" --arg is_img=False upscale_and_rife_2.vpy --graph full > 1.dot }
 #ffprobe -v error -select_streams v:0 -show_entries frame=pts_time,pkt_size,pict_type -of csv=s=,:p=0 -i .\p7_cq00.mkv
 #ls *.mkv | % {$bit_rate = ffprobe -v error -select_streams v:0 -show_entries format=bit_rate -of csv=s=x:p=0 -i $_; "{0,5:F}Mbps {1}" -f ($bit_rate/1Mb),($_.Name) } | sort -Desc
 

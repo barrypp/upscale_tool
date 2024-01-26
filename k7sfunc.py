@@ -744,7 +744,7 @@ def ESRGAN_NV(
 		raise ModuleNotFoundError(f"模块 {func_name} 依赖错误：缺失插件，检查项目 trt")
 
 	plg_dir = os.path.dirname(core.trt.Version()["path"]).decode()
-	mdl_fname = ["RealESRGANv2-animevideo-xsx2", "realesr-animevideov3", "animejanaiV2L1", "animejanaiV2L2", "animejanaiV2L3"][[0, 2, 5005, 5006, 5007].index(model)]
+	mdl_fname = ["RealESRGANv2-animevideo-xsx2", "realesr-animevideov3", "animejanaiV2L1", "animejanaiV2L2", "animejanaiV2L3","RealESRGAN_x2plus","RealESRGAN_x4plus"][[0, 2, 5005, 5006, 5007,301,302].index(model)]
 	mdl_pth = plg_dir + "/models/RealESRGANv2/" + mdl_fname + ".onnx"
 	if not os.path.exists(mdl_pth) :
 		raise vs.Error(f"模块 {func_name} 所请求的模型缺失")

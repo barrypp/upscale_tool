@@ -3,6 +3,7 @@ Import-Module ./5-plot.psm1
 #7z l *.cbz > 1.txt
 #ls *.cbz | % { $a = -split $(7z l $_.FullName | select -last 1); "{0,5:F}MB/f {1}" -f ($a[2]/$a[4]/1Mb),($_.Name) } | sort -Desc
 #ls 1/*.cbz | ForEach-Object { 7z x $_.FullName -o"2/tmp"; 7z a -mx0 -tzip "3/$($_.Name)" "$((ls ./2/tmp/*)[0])/*";  rm -R -Force ./2/tmp }
+$no_odd_height = $false
 
 $data = @{}
 ls -Filter '1/*.cbz' | ForEach-Object {
@@ -23,10 +24,14 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     #
     magick identify 2/tmp2/* | ConvertFrom-Csv -Delimiter " " -Header a,b,c,d,e,f | foreach {
         $a = $_.c -split "x"
-        if ([int]$a[1] -ge 2160){
+        $b = [int]$a[1]
+        if ($b -ge 2160){
             mv $_.a 2/tmp3
         }
         else{
+            if (($b % 2) -ge 1 -and $no_odd_height){
+                magick $_.a -chop 0x1 $_.a
+            }
             $_.a | Out-File -FilePath 2/tmp.$($_.c)_$($_.f).txt -Append
         }
     }

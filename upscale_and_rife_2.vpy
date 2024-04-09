@@ -10,7 +10,7 @@ in_file = globals()["in"]
 is_img = globals()["is_img"] == "True"
 upscale = "RealESRGAN" #"RealESRGAN", None
 upfps = "RIFE" if not is_img else "None" #"RIFE", None
-model_RealESRGAN = 5007#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV2L3 = 5007
+model_RealESRGAN = 5010#  RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV3-HD-L3 = 5010
 
 # RealESRGAN
 H_Pre = 720
@@ -18,7 +18,7 @@ Lt_Hd = True
 RealESRGAN_Model = model_RealESRGAN
 Gpu = 0
 Gpu_T = 1
-RealESRGAN_St_Eng = True if model_RealESRGAN == 301 or model_RealESRGAN == 302 or model_RealESRGAN == 5007 else False
+RealESRGAN_St_Eng = True if model_RealESRGAN == 301 or model_RealESRGAN == 302 or model_RealESRGAN == 5010 else False
 Ws_Size = 0
 H_Max = 2160
 Lk_Fmt = False
@@ -35,8 +35,8 @@ Lk_Fmt = False
 # RIFE
 H_Pre = 1440
 Lt_D2k = True
-RIFE_Model = 4131
-Ext_Proc = True
+RIFE_Model = 415
+Ext_Proc = False
 T_Tta = False
 Fps_Num = 2
 Fps_Den = 1
@@ -48,7 +48,7 @@ Ws_Size = 0
 Lk_Fmt = False
 ## 整数，预降低处理源高度（填你的显示器高度）
 ## <True|False> 是否对超过DCI2K分辨率的源进行补帧
-## <46|413|4131> 使用的模型
+## <46|415|4151> 使用的模型
 ## <True|False> 是否使用外部的填充裁切处理
 ## <True|False> 是否使用ensemble版模型
 ## 整数，Fps_Num/Fps_Den 的值即帧率倍数

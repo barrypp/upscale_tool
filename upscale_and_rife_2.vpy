@@ -33,7 +33,7 @@ H_Max = 2160
 Lk_Fmt = False
 ## 整数，预降低处理源高度
 ## <True|False> 是否对超过HD分辨率（720P）的源进行处理
-## <0|2|5005|5006|5007> 使用的模型
+## <0|2|5005|5006|5007|5008|5009|5010> 使用的模型
 ## 使用的显卡序号，0为排序一号
 ## <1|2|3> 使用的显卡线程数
 ## <True|False> 是否使用静态引擎（需要对不同分辨率的源各进行预处理）；动态引擎自适应不同分辨率（64²→DCI2K）
@@ -50,7 +50,7 @@ if upscale == "RealESRGAN" and clip.height < 2160 :
 # RIFE
 H_Pre = 2160
 Lt_D2k = True
-Model = 415
+Model = 422
 Ext_Proc = False
 T_Tta = False
 Fps_Num = 2
@@ -63,7 +63,7 @@ Ws_Size = 0
 Lk_Fmt = False
 ## 整数，预降低处理源高度（填你的显示器高度）
 ## <True|False> 是否对超过DCI2K分辨率的源进行补帧
-## <46|415|4151> 使用的模型
+## <46|422|4221> 使用的模型
 ## <True|False> 是否使用外部的填充裁切处理
 ## <True|False> 是否使用ensemble版模型
 ## 整数，Fps_Num/Fps_Den 的值即帧率倍数

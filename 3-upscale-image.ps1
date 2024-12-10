@@ -11,14 +11,14 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     mkdir -Force 2/tmp2,2/tmp3,2/tmp4
 
     #
-    mv 2/tmp1/*.mkv,2/tmp1/*.jxl 2/tmp4
-    mv 2/tmp1/*.png,2/tmp1/*.jpg,2/tmp1/*.bmp,2/tmp1/*.webp 2/tmp2
+    mv 2/tmp1/*.mkv 2/tmp4
+    mv 2/tmp1/*.png,2/tmp1/*.jpg,2/tmp1/*.bmp,2/tmp1/*.webp,2/tmp1/*.jxl 2/tmp2
     
     # gif
     ls -Filter '2/tmp1/*.gif' | ForEach-Object {
         $a = split-path $_ -LeafBase
         ffmpeg -v warning -stats -y -i "$_" -c:v hevc_nvenc -preset p7 -tune lossless -pix_fmt p010le -profile:v main10 -b:v 0K "./2/tmp1/$a.mkv"
-        cmd /c "vspipe -c y4m --arg in=./2/tmp1/$a.mkv --arg is_img=False upscale_and_rife_2.vpy - | ffmpeg -v warning -stats -y -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 ./2/tmp4/$a.mkv"
+        cmd /c "vspipe -c y4m --arg in=./2/tmp1/$a.mkv --arg is_img=False --arg model=301 upscale_and_rife_2.vpy - | ffmpeg -v warning -stats -y -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 ./2/tmp4/$a.mkv"
     }
 
     #
@@ -38,7 +38,7 @@ ls -Filter '1/*.cbz' | ForEach-Object {
 
     # upscale
     ls -Filter '2/tmp.*.txt' | ForEach-Object {
-        vspipe -p --arg "in=2/$($_.Name)" --arg is_img=True upscale_and_rife_2.vpy .
+        vspipe -p --arg "in=2/$($_.Name)" --arg is_img=True --arg model=301 upscale_and_rife_2.vpy .
         $b = 0
         Get-Content 2/$($_.Name) | % {
             $c = split-path $_ -LeafBase
@@ -51,17 +51,31 @@ ls -Filter '1/*.cbz' | ForEach-Object {
     $data[$_.Name] = @{frame=[System.Collections.ArrayList]::new();vmaf=[System.Collections.ArrayList]::new()}
     $frame_sync = [System.Collections.ArrayList]::Synchronized($data[$_.Name].frame)
     $vmaf_sync = [System.Collections.ArrayList]::Synchronized($data[$_.Name].vmaf)
-    ls -Filter '2/tmp3/*' | foreach-Object -Parallel {
-        $frame_sync = $using:frame_sync
-        $vmaf_sync = $using:vmaf_sync
-        magick mogrify -path ./2/tmp4 -quality 90 -format jxl $_
-        $a = Split-Path $_ -LeafBase
-        ffmpeg -v warning -i "./2/tmp4/$a.jxl" -i $_ -lavfi "[0:v]setpts=PTS-STARTPTS[dis];[1:v]setpts=PTS-STARTPTS[ref];[dis][ref]libvmaf=n_threads=8:model=path='model/vmaf_4k_v0.6.1.json':log_fmt=csv:log_path=2/tmp.vmaf.csv" -f null -
-        $c = Import-Csv 2/tmp.vmaf.csv
-        "$($_.name) to jxl {0:F}kB {1:F}kB $($c.vmaf)" -f ($_.length/1kB),((ls "./2/tmp4/$a.jxl").length/1kB)
-        $frame_sync.add($c.Frame) | out-null # thread safe ?
-        $vmaf_sync.add($c.vmaf) | out-null
-    } -ThrottleLimit 4
+    ls -Filter '2/tmp3/*' | foreach-Object {
+        #
+        do {
+            Start-Sleep -Seconds 0.1
+            $FreePhysicalMemory = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory
+            $FreeCPU = 100 - ((Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor).PercentProcessorTime | Measure-Object -Average).Average
+        } while ($FreePhysicalMemory -lt 4*1024*1024 -or $FreeCPU -lt 10)
+        #
+        get-job | Receive-Job
+        #
+        Start-ThreadJob -ScriptBlock {
+            $frame_sync = $using:frame_sync
+            $vmaf_sync = $using:vmaf_sync
+            $i = $using:_
+            magick mogrify -path ./2/tmp4 -quality 90 -format jxl -define jxl:effort=7 $i
+            $a = Split-Path $i -LeafBase
+            ffmpeg -v warning -i "./2/tmp4/$a.jxl" -i $i -lavfi "[0:v]setpts=PTS-STARTPTS[dis];[1:v]setpts=PTS-STARTPTS[ref];[dis][ref]libvmaf=n_threads=8:model=path='model/vmaf_4k_v0.6.1.json':log_fmt=csv:log_path=2/tmp.$a.vmaf.csv" -f null -
+            $c = Import-Csv "2/tmp.$a.vmaf.csv"
+            "$($i.name) to jxl {0:F}kB {1:F}kB $($c.vmaf)" -f ($i.length/1kB),((ls "./2/tmp4/$a.jxl").length/1kB)
+            $frame_sync.add($c.Frame) | out-null # thread safe ?
+            $vmaf_sync.add($c.vmaf) | out-null
+        } -ThrottleLimit 24 | out-null
+    }
+    get-job | Wait-Job | Receive-Job
+    get-job | remove-job
     
     "2/tmp3 {0:F}MB" -f ((ls 2/tmp3 | measure length -sum).Sum/1MB)
     "2/tmp4 {0:F}MB" -f ((ls 2/tmp4 | measure length -sum).Sum/1MB)    

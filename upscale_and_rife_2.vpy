@@ -8,9 +8,7 @@ import k7sfunc as k7f
 #
 in_file = globals()["in"]
 is_img = globals()["is_img"] == "True"
-upscale = "RealESRGAN" #"RealESRGAN", None
-upfps = "RIFE" if not is_img else "None" #"RIFE", None
-model_RealESRGAN = 5010 # RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV3-HD-L3 = 5010
+model_RealESRGAN = int(globals()["model"]) # RealESRGAN_x2plus = 301, RealESRGAN_x4plus = 302, animejanaiV3-HD-L3 = 5010
 
 #
 if is_img :
@@ -41,7 +39,9 @@ Lk_Fmt = False
 ## 整数，输出高度限制（填你的显示器高度）
 ## <True|False> 是否锁定像素格式为yuv420p8
 #
-if upscale == "RealESRGAN" and clip.height < 2160 :
+if Model != 0 and clip.height < 2160 :
+	if Model == 301 and clip.height < 1080 :
+		Model = 302
 	clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, gpu=Gpu, gpu_t=Gpu_T, st_eng=St_Eng, ws_size=Ws_Size,is_img=is_img)
 	if clip.height < 2160 :
 		clip = k7f.ESRGAN_NV(clip, lt_hd=Lt_Hd, model=Model, gpu=Gpu, gpu_t=Gpu_T, st_eng=St_Eng, ws_size=Ws_Size,is_img=is_img)
@@ -75,7 +75,7 @@ Lk_Fmt = False
 ## 整数，约束显存（MiB），静态引擎的最小值为128（动态引擎自动双倍），设为低于此数的值即最大化利用
 ## <True|False> 锁定像素格式为yuv420p8
 #
-if upfps == "RIFE" :
+if not is_img and clip.fps <= 30 :
 	clip = k7f.RIFE_NV(clip, lt_d2k=Lt_D2k, model=Model, ext_proc=Ext_Proc, t_tta=T_Tta, fps_in=float(clip.fps), fps_num=Fps_Num, fps_den=Fps_Den, sc_mode=Sc_Mode, gpu=Gpu, gpu_t=Gpu_T, st_eng=St_Eng, ws_size=Ws_Size)
 
 #

@@ -50,7 +50,7 @@ if Model != 0 and clip.height < 2160 :
 # RIFE
 H_Pre = 2160
 Lt_D2k = True
-Model = 422
+Model = 4262
 Ext_Proc = False
 T_Tta = False
 Fps_Num = 2
@@ -63,7 +63,7 @@ Ws_Size = 0
 Lk_Fmt = False
 ## 整数，预降低处理源高度（填你的显示器高度）
 ## <True|False> 是否对超过DCI2K分辨率的源进行补帧
-## <46|422|4221> 使用的模型
+## <46|4251|426|4262> 使用的模型
 ## <True|False> 是否使用外部的填充裁切处理
 ## <True|False> 是否使用ensemble版模型
 ## 整数，Fps_Num/Fps_Den 的值即帧率倍数
@@ -80,5 +80,5 @@ if not is_img and clip.fps <= 30 :
 
 #
 if is_img :
-	clip = core.imwri.Write(clip=clip, imgformat="bmp", filename="2/tmp3/tmp_%d.bmp")
+	clip = core.imwri.Write(clip=clip, imgformat="bmp", filename="tmp3/tmp_%d.bmp")
 clip.set_output()

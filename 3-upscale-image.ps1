@@ -16,7 +16,7 @@ Get-ChildItem '../1/*.cbz' | ForEach-Object {
     Get-ChildItem 'tmp1/*.gif' | ForEach-Object {
         $a = split-path $_ -LeafBase
         ffmpeg -v warning -stats -y -i "$_" -c:v hevc_nvenc -preset p7 -tune lossless -pix_fmt p010le -profile:v main10 -b:v 0K "./tmp1/$a.mkv"
-        cmd /c "vspipe -c y4m --arg in=./tmp1/$a.mkv --arg is_img=False --arg model=301 upscale_and_rife_2.vpy - | ffmpeg -v warning -stats -y -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 ./tmp4/$a.mkv"
+        cmd /c "vspipe -c y4m --arg in=./tmp1/$a.mkv --arg is_img=False --arg model=RealESRGAN_x2plus.onnx upscale_and_rife_2.vpy - | ffmpeg -v warning -stats -y -i - -c:v hevc_nvenc -preset p7 -pix_fmt p010le -profile:v main10 -b:v 0K -cq 26 ./tmp4/$a.mkv"
     }
 
     #
@@ -36,7 +36,7 @@ Get-ChildItem '../1/*.cbz' | ForEach-Object {
 
     # upscale
     Get-ChildItem 'tmp.*.txt' | ForEach-Object {
-        vspipe -p --arg "in=./$($_.Name)" --arg is_img=True --arg model=301 upscale_and_rife_2.vpy .
+        vspipe -p --arg "in=./$($_.Name)" --arg is_img=True --arg model=RealESRGAN_x2plus.onnx upscale_and_rife_2.vpy .
         $b = 0
         Get-Content ./$($_.Name) | % {
             $c = split-path $_ -LeafBase
